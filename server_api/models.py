@@ -8,7 +8,7 @@ from author.models import Author
 class Server(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     server_address = models.TextField(null=False)
-    auth = models.ForeignKey(Author, blank=False, null=False, on_delete=models.CASCADE)
+    auth = models.TextField(null=False)
 
     class Meta:
         unique_together = ()

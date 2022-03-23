@@ -16,7 +16,7 @@ class LikePostSerializer(serializers.ModelSerializer):
         representation['@context'] = "https://www.w3.org/ns/activitystreams"
         representation['summary'] = instance.summary
         representation['author'] = AuthorSerializer(instance.get_author(), many=False).data
-        representation['object'] = f"http://127.0.0.1:8000/authors/{instance.author.id}/posts/{instance.post.id}"
+        representation['object'] = f"http://{base_url}:8000/authors/{instance.author.id}/posts/{instance.post.id}"
 
         return representation
 
@@ -33,6 +33,6 @@ class LikeCommentSerializer(serializers.ModelSerializer):
         representation['@context'] = "https://www.w3.org/ns/activitystreams"
         representation['summary'] = instance.summary
         representation['author'] = AuthorSerializer(instance.get_author(), many=False).data
-        representation['object'] = f"http://127.0.0.1:8000/authors/{instance.author.id}/posts/{instance.comment.post.id}"
+        representation['object'] = f"http://{base_url}:8000/authors/{instance.author.id}/posts/{instance.comment.post.id}"
 
         return representation

@@ -7,21 +7,20 @@ from rest_framework.generics import GenericAPIView
 from author.serializer import AuthorSerializer
 from author.models import Author
 
-'''
+
 class Register(GenericAPIView):
-    authentication_classes = [BasicAuthentication, ]
+    authentication_classes = []
 
     def post(self, request):
         username = request.data["username"]
         password = request.data["password"]
-        first_name = request.data["first_name"]
-        last_name = request.data["last_name"]
-        profile_header = request.data["profile_header"]
+        display_name = request.data["display_name"]
+        github = request.data["github"]
 
-        new_user = Author.objects.create_user(username, password, first_name=first_name, last_name=last_name, profile_header=profile_header)
+        new_user = Author.objects.create_user(username, password, display_name=display_name, github=github)
+        new_user.save()
 
-        return response.Response(str(new_user), status=status.HTTP_200_OK)
-'''
+        return response.Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class Login(GenericAPIView):

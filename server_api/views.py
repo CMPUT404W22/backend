@@ -128,11 +128,7 @@ class GetPostImageApiView(GenericAPIView):
         post = Post.objects.get(id=post_id)
 
         if post.type == "image/png;base64" or post.type == "image/jpeg;base64":
-            format = "png" if "png" in post.type else "jpeg"
-            img_str = post.content
-
-            data = ContentFile(base64.b64decode(img_str), name='temp.' + format)  # You can save this as file instance.
-            return response.Response(data, status=status.HTTP_200_OK)
+            return response.Response({"image": post.content}, status=status.HTTP_200_OK)
         else:
             return response.Response(status=status.HTTP_404_NOT_FOUND)
 # endregion
@@ -148,8 +144,8 @@ class GetCommentsApiView(GenericAPIView):
 
         result = {
             "type": "comments",
-            "post": f'http://127.0.0.1:8000/authors/{author_id}/posts/{post_id}/',
-            "id": f'http://127.0.0.1:8000/authors/{author_id}/posts/{post_id}/comments',
+            "post": f'http://{base_url}:8000/authors/{author_id}/posts/{post_id}/',
+            "id": f'http://{base_url}:8000/authors/{author_id}/posts/{post_id}/comments',
             "comments": self.serializer_class(comments, many=True).data
         }
 
@@ -226,6 +222,5 @@ class SendToInboxApiView(GenericAPIView):
             return response.Response("Notification Created", status=status.HTTP_201_CREATED)
         except Exception as e:
             return response.Response(f"Failed to post to inbox: {e}", status=status.HTTP_400_BAD_REQUEST)
-
 # endregion
 

@@ -9,6 +9,7 @@ from author.models import Author
 from comment.serializer import CommentSerializer
 from post.models import Post
 from comment.models import Comment
+from author.host import base_url
 
 
 class GetCommentsApiView(GenericAPIView):
@@ -32,8 +33,8 @@ class GetCommentsApiView(GenericAPIView):
                 "type": "comments",
                 "page": page,
                 "size": size,
-                "post": f'http://127.0.0.1:8000/authors/{user_id}/posts/{post_id}/',
-                "id": f'http://127.0.0.1:8000/authors/{user_id}/posts/{post_id}/comments',
+                "post": f'{base_url}/authors/{user_id}/posts/{post_id}/',
+                "id": f'{base_url}/authors/{user_id}/posts/{post_id}/comments',
                 "comments": self.serializer_class(page_obj, many=True).data
 
             }
@@ -42,8 +43,8 @@ class GetCommentsApiView(GenericAPIView):
         else:
             result = {
                 "type": "comments",
-                "post": f'http://127.0.0.1:8000/authors/{user_id}/posts/{post_id}/',
-                "id": f'http://127.0.0.1:8000/authors/{user_id}/posts/{post_id}/comments',
+                "post": f'{base_url}/authors/{user_id}/posts/{post_id}/',
+                "id": f'{base_url}/authors/{user_id}/posts/{post_id}/comments',
                 "comments": self.serializer_class(comments, many=True).data
             }
 

@@ -2,6 +2,7 @@ from rest_framework import serializers
 
 from author.serializer import AuthorSerializer
 from comment.models import Comment
+from author.host import base_url
 
 
 class CommentSerializer(serializers.ModelSerializer):
@@ -17,6 +18,6 @@ class CommentSerializer(serializers.ModelSerializer):
         representation['comment'] = instance.content
         representation['contentType'] = instance.type
         representation['published'] = instance.created
-        representation['id'] = f"http://127.0.0.1:8000/authors/{instance.author.id}/posts/{instance.post.id}/comments/{instance.id}",
+        representation['id'] = f"{base_url}/authors/{instance.author.id}/posts/{instance.post.id}/comments/{instance.id}",
 
         return representation

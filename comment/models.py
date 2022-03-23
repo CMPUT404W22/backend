@@ -4,6 +4,7 @@ from django.db import models
 
 from author.models import Author
 from post.models import Post
+from author.host import base_url
 
 
 class Comment(models.Model):
@@ -25,7 +26,7 @@ class Comment(models.Model):
             "comment": self.content,
             "contentType": "text markdown",
             "published": self.updated,
-            "id": f'http://127.0.0.1:8000/authors/{self.author.id}/posts/{self.post.id}/comments/{self.id}',
+            "id": f'{base_url}/authors/{self.author.id}/posts/{self.post.id}/comments/{self.id}',
         }
 
 
