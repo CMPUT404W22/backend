@@ -15,7 +15,7 @@ class AuthorSerializer(serializers.ModelSerializer):
         representation['type'] = "author"
         representation['id'] = f"{base_url}/authors/{instance.id}"
         representation['url'] = f"{base_url}/authors/{instance.id}"
-        representation['host'] = "{base_url}/"
+        representation['host'] = f"{base_url}/"
         representation['displayName'] = instance.display_name
         representation['github'] = instance.github
         representation['profileImage'] = instance.image

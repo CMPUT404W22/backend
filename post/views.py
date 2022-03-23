@@ -1,6 +1,7 @@
 import base64
 
 from django.core.paginator import Paginator
+from django.db.models import Q
 from rest_framework import response, status
 from rest_framework.authentication import BasicAuthentication
 from rest_framework.generics import GenericAPIView
@@ -9,23 +10,31 @@ from rest_framework.generics import GenericAPIView
 from author.models import Author
 from following.models import Following
 from post.serializer import PostSerializer
-from post.models import Post
-from django.db.models import Q
+from post.models import Post, Visibility, PostType
+import operator
 
 
 class GetHomePagePosts(GenericAPIView):
     authentication_classes = [BasicAuthentication, ]
     serializer_class = PostSerializer
 
-    def get(self, request):
-        following = Following.objects.filter(author=request.user)
-        posts = Post.objects.filter(author=request.user)
+    def get(self, request, user_id):
+        request_type = request.GET.get('type')
+        posts = None
+        if request_type == "all":
+            following = Following.objects.filter(author=request.user)
+            posts = Post.objects.filter(author=request.user)
 
-        for i in following:
-            p = Post.objects.filter(author=i.following, unlisted=False, visibility='PUBLIC')
-            posts = posts | p
+            for i in following:
+                p = Post.objects.filter(Q(author=i.following) & Q(unlisted=False) & (Q(visibility=Visibility.PUBLIC) | Q(visibility=Visibility.FRIENDS)))
+                posts = posts | p
+        else:
+            posts = Post.objects.filter(author=request.user)
+
+        posts = reversed(sorted(posts, key=operator.attrgetter('created')))
 
         return response.Response(self.serializer_class(posts, many=True).data, status=status.HTTP_200_OK)
+
 
 class GetPostsApiView(GenericAPIView):
     authentication_classes = [BasicAuthentication, ]

@@ -13,6 +13,7 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+from django.conf.urls import url
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path, include, re_path
@@ -37,6 +38,7 @@ schema_view = get_schema_view(
 )
 
 urlpatterns = [
+    url(r'^admin/', admin.site.urls),
     path('service/authors/', include("author.urls")),
     path('service/authors/<str:user_id>/posts/', include("post.urls")),
     path('service/authors/<str:user_id>/posts/<str:post_id>/comments', include("comment.urls")),

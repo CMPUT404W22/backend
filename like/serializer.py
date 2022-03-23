@@ -2,6 +2,7 @@ from rest_framework import serializers
 
 from author.serializer import AuthorSerializer
 from like.models import LikePost, LikeComment
+from author.host import base_url
 
 
 class LikePostSerializer(serializers.ModelSerializer):
@@ -16,7 +17,7 @@ class LikePostSerializer(serializers.ModelSerializer):
         representation['@context'] = "https://www.w3.org/ns/activitystreams"
         representation['summary'] = instance.summary
         representation['author'] = AuthorSerializer(instance.get_author(), many=False).data
-        representation['object'] = f"http://{base_url}:8000/authors/{instance.author.id}/posts/{instance.post.id}"
+        representation['object'] = f"{base_url}/authors/{instance.author.id}/posts/{instance.post.id}"
 
         return representation
 
@@ -33,6 +34,6 @@ class LikeCommentSerializer(serializers.ModelSerializer):
         representation['@context'] = "https://www.w3.org/ns/activitystreams"
         representation['summary'] = instance.summary
         representation['author'] = AuthorSerializer(instance.get_author(), many=False).data
-        representation['object'] = f"http://{base_url}:8000/authors/{instance.author.id}/posts/{instance.comment.post.id}"
+        representation['object'] = f"{base_url}/authors/{instance.author.id}/posts/{instance.comment.post.id}"
 
         return representation

@@ -15,11 +15,11 @@ from like.serializer import LikePostSerializer, LikeCommentSerializer
 from notification.models import Notification
 from post.models import Post
 from post.serializer import PostSerializer
-
-# region authors
+from author.host import base_url
 from following.models import Following
 
 
+# region authors
 class GetAuthorsApiView(GenericAPIView):
     authentication_classes = [BasicAuthentication, ]
     serializer_class = AuthorSerializer
@@ -144,8 +144,8 @@ class GetCommentsApiView(GenericAPIView):
 
         result = {
             "type": "comments",
-            "post": f'http://{base_url}:8000/authors/{author_id}/posts/{post_id}/',
-            "id": f'http://{base_url}:8000/authors/{author_id}/posts/{post_id}/comments',
+            "post": f'{base_url}/authors/{author_id}/posts/{post_id}/',
+            "id": f'{base_url}/authors/{author_id}/posts/{post_id}/comments',
             "comments": self.serializer_class(comments, many=True).data
         }
 
