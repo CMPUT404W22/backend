@@ -13,7 +13,7 @@ from post.serializer import PostSerializer
 from post.models import Post, Visibility, PostType
 import operator
 
-from server_api.external import GetAllPost
+from server_api.external import GetAllPosts
 
 
 class GetHomePagePosts(GenericAPIView):
@@ -34,7 +34,7 @@ class GetHomePagePosts(GenericAPIView):
         elif request_type == "self":
             posts = Post.objects.filter(author=request.user)
         elif request_type == "explore":
-            authors = GetAllPost()
+            authors = GetAllPosts()
             return response.Response(authors, status=status.HTTP_200_OK)
 
         posts = reversed(sorted(posts, key=operator.attrgetter('created')))

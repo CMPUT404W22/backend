@@ -1,3 +1,4 @@
+from django.db.models import Q
 from django.shortcuts import render
 
 # Create your views here.
@@ -11,6 +12,8 @@ from comment.serializer import CommentSerializer
 from post.models import Post
 from comment.models import Comment
 from author.host import base_url
+from server_api.external import GetAllPostComments
+from server_api.models import Server
 
 
 class GetCommentsApiView(GenericAPIView):
@@ -53,7 +56,9 @@ class GetCommentsApiView(GenericAPIView):
 
                 return response.Response(result, status=status.HTTP_200_OK)
         else:
-            return response.Response(status=status.HTTP_501_NOT_IMPLEMENTED)
+            server = Server.objects.get(server_address__icontains=f"{request.GET.get('origin')}")
+            comments = GetAllPostComments(server, user_id, post_id)
+            return response.Response(comments, status=status.HTTP_200_OK)
 
     def post(self, request, user_id, post_id):
         post = Post.objects.get(id=post_id)

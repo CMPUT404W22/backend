@@ -9,6 +9,9 @@ from like.models import LikePost, LikeComment
 from like.serializer import LikePostSerializer, LikeCommentSerializer
 from post.models import Post
 from comment.models import Comment
+from server_api.external import GetAllPostLikes
+from server_api.models import Server
+
 
 def save_like_post(author, post):
     like_post = LikePost.objects.create(author=author,post=post)
@@ -32,13 +35,18 @@ class GetLikeApiView(GenericAPIView):
 
     def get(self, request, user_id, post_id):
         # gets a list of likes from other authors on AUTHOR_ID’s post POST_ID
-        try:
-            post = Post.objects.get(id=post_id, author=user_id)
-            likes = LikePost.objects.filter(post=post)
-            return response.Response(self.serializer_class(likes, many=True).data, status=status.HTTP_200_OK)
+        if request.GET.get("origin") == "local":
+            try:
+                post = Post.objects.get(id=post_id, author=user_id)
+                likes = LikePost.objects.filter(post=post)
+                return response.Response(self.serializer_class(likes, many=True).data, status=status.HTTP_200_OK)
 
-        except Exception as e:
-            return response.Response(f"Error occurred: {e}", status.HTTP_404_NOT_FOUND)
+            except Exception as e:
+                return response.Response(f"Error occurred: {e}", status.HTTP_404_NOT_FOUND)
+        else:
+            server = Server.objects.get(server_address__icontains=f"{request.GET.get('origin')}")
+            likes = GetAllPostLikes(server, user_id, post_id)
+            return response.Response(likes, status=status.HTTP_200_OK)
 
     def post(self, request, user_id, post_id):
         if request.GET.get("origin") == "local":

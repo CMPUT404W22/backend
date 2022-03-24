@@ -2,6 +2,7 @@ from rest_framework import serializers
 
 from author.serializer import AuthorSerializer
 from comment.models import Comment
+from comment.serializer import CommentSerializer
 from like.models import LikePost
 from post.models import Post, Visibility, PostType
 from author.host import base_url
@@ -25,6 +26,7 @@ class PostSerializer(serializers.ModelSerializer):
         representation['categories'] = instance.categories
         representation['count'] = Comment.objects.filter(post=instance).count()
         representation['likeCount'] = LikePost.objects.filter(post=instance).count()
+        representation['commentsSrc'] = CommentSerializer(Comment.objects.filter(post=instance), many=True).data
         representation['comments'] = f'{base_url}/authors/{instance.author.id}/posts/{instance.id}/comments'
         representation['published'] = instance.updated
         representation['visibility'] = instance.visibility
