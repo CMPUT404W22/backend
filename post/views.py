@@ -13,6 +13,8 @@ from post.serializer import PostSerializer
 from post.models import Post, Visibility, PostType
 import operator
 
+from server_api.external import GetAllPost
+
 
 class GetHomePagePosts(GenericAPIView):
     authentication_classes = [BasicAuthentication, ]
@@ -28,8 +30,11 @@ class GetHomePagePosts(GenericAPIView):
             for i in following:
                 p = Post.objects.filter(Q(author=i.following) & Q(unlisted=False) & (Q(visibility=Visibility.PUBLIC) | Q(visibility=Visibility.FRIENDS)))
                 posts = posts | p
-        else:
+        elif request_type == "self":
             posts = Post.objects.filter(author=request.user)
+        elif request_type == "explore":
+            authors = GetAllPost()
+            return response.Response(authors, status=status.HTTP_200_OK)
 
         posts = reversed(sorted(posts, key=operator.attrgetter('created')))
 
@@ -113,24 +118,25 @@ class GetPostApiView(GenericAPIView):
     def post(self, request, user_id, post_id):
         try:
             if str(request.user.id) == user_id:
-
                 title = request.data["title"]
                 description = request.data["description"]
                 content = request.data["content"]
                 visibility = request.data["visibility"]
                 categories = request.data["categories"]
-                # count = request.data["count"]
                 unlisted = request.data["unlisted"]
-                image = request.data["image"]
 
-                post = Post.objects.get(id=post_id)
+                post = None
+                try:
+                    post = Post.objects.get(id=post_id)
+                except:
+                    post = Post.objects.create(id=post_id, author=request.user)
                 post.title = title
                 post.description = description
                 post.content = content
                 post.visibility = visibility
                 post.categories = categories
                 post.unlisted = unlisted
-                post.image = image
+                post.type = "text/plain"
                 post.save()
 
                 result = self.serializer_class(post, many=False)

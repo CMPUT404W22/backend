@@ -1,6 +1,7 @@
 from django.shortcuts import render
 
 # Create your views here.
+from rest_framework.authentication import BasicAuthentication
 from rest_framework.generics import GenericAPIView
 from rest_framework import response, status
 from author.models import Author
@@ -24,8 +25,9 @@ def save_like_comment(author, comment):
     like_comment.summary = author.username + " Liked on your comment"
     like_comment.save()
 
+
 class GetLikeApiView(GenericAPIView):
-    authentication_classes = []
+    authentication_classes = [BasicAuthentication, ]
     serializer_class = LikePostSerializer
 
     def get(self, request, user_id, post_id):
@@ -37,6 +39,21 @@ class GetLikeApiView(GenericAPIView):
 
         except Exception as e:
             return response.Response(f"Error occurred: {e}", status.HTTP_404_NOT_FOUND)
+
+    def post(self, request, user_id, post_id):
+        if request.GET.get("origin") == "local":
+            post = Post.objects.get(id=post_id)
+            like = None
+            try:
+                like = LikePost.objects.create(author=request.user, post=post, summary=f"{request.user.display_name} liked your post")
+                like.save()
+            except:
+                LikePost.objects.get(author=request.user, post=post).delete()
+                return response.Response({"created": False, "deleted": True}, status=status.HTTP_200_OK)
+
+            return response.Response({"created": True}, status=status.HTTP_200_OK)
+        else:
+            return response.Response(status=status.HTTP_501_NOT_IMPLEMENTED)
 
 
 class GetLikeCommentApiView(GenericAPIView):
@@ -52,6 +69,15 @@ class GetLikeCommentApiView(GenericAPIView):
 
         except Exception as e:
             return response.Response(f"Error occurred: {e}", status.HTTP_404_NOT_FOUND)
+
+    def post(self, request, user_id, post_id, comment_id):
+        if request.GET.get("origin") == "local":
+            comment = Comment.objects.get(id=comment_id)
+            like = LikeComment.objects.create(author=request.user, comment=comment, summary=f"{request.user.display_name} liked your comment")
+            like.save()
+            return response.Response(self.serializer_class(like, many=False).data, status=status.HTTP_200_OK)
+        else:
+            return response.Response(status=status.HTTP_501_NOT_IMPLEMENTED)
 
 
 class GetLikedApiView(GenericAPIView):

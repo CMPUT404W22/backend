@@ -9,8 +9,8 @@ from author.models import Author
 
 
 class Visibility(models.TextChoices):
-    PUBLIC = 'Public'
-    FRIENDS = 'Friends'
+    PUBLIC = 'Public', 'Public'
+    FRIENDS = 'Friends', 'Friends'
 
 
 class PostType(models.TextChoices):

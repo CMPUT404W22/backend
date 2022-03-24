@@ -26,6 +26,7 @@ class GetFollowersApiView(GenericAPIView):
         except Exception as e:
             return response.Response(status=status.HTTP_400_BAD_REQUEST)
 
+
 class EditFollowersApiView(GenericAPIView):
     authentication_classes = [BasicAuthentication, ]
     serializer_class = AuthorSerializer
@@ -62,6 +63,7 @@ class EditFollowersApiView(GenericAPIView):
             return response.Response([], status.HTTP_200_OK)
         except Exception as e:
             return response.Response(f"Error while trying to get followers: {e}", status=status.HTTP_400_BAD_REQUEST)
+
 
 class FollowRequestApiView(GenericAPIView):
     def get(self, request, author_id):

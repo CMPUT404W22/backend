@@ -23,7 +23,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = "e^b34l68jzk@(&+y41ftkqfb$vxh0rua#@k8h-sd%=-g^c66od"
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ["*"]
 
@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'like',
     'notification',
     'post',
+    'server_api'
 ]
 
 MIDDLEWARE = [

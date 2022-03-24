@@ -46,9 +46,6 @@ class GetAuthorsApiView(GenericAPIView):
     def get(self, request):
         users = Author.objects.all()
 
-        # TODO
-        # Call to other server and get their node
-
         if len(request.query_params) != 0:
             page = request.query_params["page"]
             size = 10

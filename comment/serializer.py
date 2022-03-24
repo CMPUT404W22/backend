@@ -18,6 +18,6 @@ class CommentSerializer(serializers.ModelSerializer):
         representation['comment'] = instance.content
         representation['contentType'] = instance.type
         representation['published'] = instance.created
-        representation['id'] = f"{base_url}/authors/{instance.author.id}/posts/{instance.post.id}/comments/{instance.id}",
+        representation['id'] = f"{base_url}/authors/{instance.author.id}/posts/{instance.post.id}/comments/{instance.id}"
 
         return representation
