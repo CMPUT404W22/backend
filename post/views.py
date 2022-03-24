@@ -24,8 +24,9 @@ class GetHomePagePosts(GenericAPIView):
         request_type = request.GET.get('type')
         posts = None
         if request_type == "all":
+            posts = Post.objects.filter(visibility="Public")
             following = Following.objects.filter(author=request.user)
-            posts = Post.objects.filter(author=request.user)
+            posts | Post.objects.filter(author=request.user)
 
             for i in following:
                 p = Post.objects.filter(Q(author=i.following) & Q(unlisted=False) & (Q(visibility=Visibility.PUBLIC) | Q(visibility=Visibility.FRIENDS)))
