@@ -18,6 +18,7 @@ class Register(GenericAPIView):
         github = request.data["github"]
 
         new_user = Author.objects.create_user(username, password, display_name=display_name, github=github)
+        new_user.is_active = False
         new_user.save()
 
         return response.Response(status=status.HTTP_204_NO_CONTENT)

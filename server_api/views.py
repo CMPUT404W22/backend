@@ -96,7 +96,7 @@ class GetPostsApiView(GenericAPIView):
     serializer_class = PostSerializer
 
     def get(self, request, author_id):
-        post = Post.objects.filter(author=author_id)
+        post = Post.objects.filter(author=author_id, visibility="Public")
 
         result = {
             "type": "posts",
