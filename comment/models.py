@@ -22,7 +22,7 @@ class Comment(models.Model):
     def toJson(self):
         return {
             "type": "comment",
-            "author": self.get_author().toJson(),
+            "author": self.get_author(),
             "comment": self.content,
             "contentType": "text markdown",
             "published": self.updated,

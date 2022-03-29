@@ -21,68 +21,76 @@ class GetCommentsApiView(GenericAPIView):
     authentication_classes = [BasicAuthentication, ]
 
     def get(self, request, user_id, post_id):
-        if request.GET.get("origin") == "local":
-            comments = Comment.objects.filter(post=post_id)
+        try:
+            address = request.GET.get("origin")
 
-            if len(request.query_params) != 0:
+            if address == "local":
+                comments = Comment.objects.filter(post=post_id).order_by("-created")
+
+                if len(request.query_params) <= 1:
+                    result = {
+                        "type": "comments",
+                        "post": f'{base_url}/authors/{user_id}/posts/{post_id}/',
+                        "id": f'{base_url}/authors/{user_id}/posts/{post_id}/comments',
+                        "comments": self.serializer_class(comments, many=True).data
+                    }
+
+                    return response.Response(result, status=status.HTTP_200_OK)                    
+
+                # else: len(request.query_params) > 1
                 page = request.query_params["page"]
                 size = 10
-                try:
-                    size = request.queryparams["size"]
-                except Exception as _:
-                    pass
+                if request.query_params.get("size") is not None:
+                    size = request.query_params["size"]
 
                 paginator = Paginator(comments, size)
                 page_obj = paginator.get_page(page)
 
                 result = {
                     "type": "comments",
-                    "page": page,
-                    "size": size,
+                    "page": f'{page}',
+                    "size": f'{size}',
                     "post": f'{base_url}/authors/{user_id}/posts/{post_id}/',
                     "id": f'{base_url}/authors/{user_id}/posts/{post_id}/comments',
                     "comments": self.serializer_class(page_obj, many=True).data
-
                 }
 
                 return response.Response(result, status=status.HTTP_200_OK)
-            else:
-                result = {
-                    "type": "comments",
-                    "post": f'{base_url}/authors/{user_id}/posts/{post_id}/',
-                    "id": f'{base_url}/authors/{user_id}/posts/{post_id}/comments',
-                    "comments": self.serializer_class(comments, many=True).data
-                }
 
-                return response.Response(result, status=status.HTTP_200_OK)
-        else:
-            server = Server.objects.get(server_address__icontains=f"{request.GET.get('origin')}")
+            # else: request.GET.get("origin") is remote
+            server = Server.objects.get(server_address=f"{address}")
             comments = GetAllPostComments(server, user_id, post_id)
             return response.Response(comments, status=status.HTTP_200_OK)
+        except Exception as e:
+            return response.Response(f"Error: {e}", status=status.HTTP_400_BAD_REQUEST)
 
     def post(self, request, user_id, post_id):
-        post = Post.objects.get(id=post_id)
         try:
-            comment = Comment.objects.create(author=request.user, post=post)
-            content = request.data["content"]
+            post = Post.objects.get(id=post_id)
+            author = Author.objects.get(id=user_id)
 
-            comment.content = content
+            comment: Comment = Comment.objects.create(author=author, post=post)
+
+            comment.content = request.data["content"]
             comment.type = "text/plain"
             comment.save()
 
             result = self.serializer_class(comment, many=False)
             return response.Response(result.data, status=status.HTTP_201_CREATED)
-        except Exception:
-            return response.Response("Error", status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return response.Response(f"Error: {e}", status=status.HTTP_400_BAD_REQUEST)
 
 
 class CommentApiView(GenericAPIView):
     authentication_classes = [BasicAuthentication, ]
 
     def delete(self, request, user_id, post_id, comment_id):
-        comment = Comment.objects.get(id=comment_id)
-        if comment.author == request.user:
-            comment.delete()
-            return response.Response(status=status.HTTP_204_NO_CONTENT)
-        else:
-            return response.Response(status=status.HTTP_403_FORBIDDEN)
+        try:
+            comment = Comment.objects.get(id=comment_id)
+            if comment.author == request.user:
+                comment.delete()
+                return response.Response(status=status.HTTP_204_NO_CONTENT)
+            else:
+                return response.Response(status=status.HTTP_403_FORBIDDEN)
+        except Exception as e:
+            return response.Response(f"Error: {e}", status=status.HTTP_400_BAD_REQUEST)
