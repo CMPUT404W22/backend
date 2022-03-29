@@ -21,42 +21,48 @@ class GetHomePagePosts(GenericAPIView):
     serializer_class = PostSerializer
 
     def get(self, request, user_id):
-        request_type = request.GET.get('type')
-        posts = None
-        if request_type == "all":
-            posts = Post.objects.filter(visibility="Public")
-            following = Following.objects.filter(author=request.user)
-            posts | Post.objects.filter(author=request.user)
+        try:
+            request_type = request.GET.get('type')
+            posts = None
+            if request_type == "all":
+                posts = Post.objects.filter(visibility="Public")
+                following = Following.objects.filter(author=request.user)
+                posts | Post.objects.filter(author=request.user)
 
-            for i in following:
-                p = Post.objects.filter(Q(author=i.following) & Q(unlisted=False) & (Q(visibility=Visibility.PUBLIC) | Q(visibility=Visibility.FRIENDS)))
-                posts = posts | p
-        elif request_type == "self":
-            posts = Post.objects.filter(author=request.user)
-        elif request_type == "explore":
-            authors = GetAllPosts()
-            return response.Response(authors, status=status.HTTP_200_OK)
+                for i in following:
+                    p = Post.objects.filter(Q(author=i.following) & Q(unlisted=False) & (Q(visibility=Visibility.PUBLIC) | Q(visibility=Visibility.FRIENDS)))
+                    posts = posts | p
+            elif request_type == "self":
+                posts = Post.objects.filter(author=request.user)
+            elif request_type == "explore":
+                authors = GetAllPosts()
+                return response.Response(authors, status=status.HTTP_200_OK)
 
-        posts = reversed(sorted(posts, key=operator.attrgetter('created')))
+            posts = reversed(sorted(posts, key=operator.attrgetter('created')))
 
-        return response.Response(self.serializer_class(posts, many=True).data, status=status.HTTP_200_OK)
-
+            return response.Response(self.serializer_class(posts, many=True).data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return response.Response(f"Error: {e}", status=status.HTTP_400_BAD_REQUEST)
 
 class GetPostsApiView(GenericAPIView):
     authentication_classes = [BasicAuthentication, ]
     serializer_class = PostSerializer
 
     def get(self, request, user_id):
+        try:
+            post = Post.objects.filter(author=user_id)
 
-        post = Post.objects.filter(author=user_id)
+            if len(request.query_params) == 0:
+                result = {
+                    "type": "posts",
+                    "items": self.serializer_class(post, many=True).data
+                }
+                return response.Response(result, status=status.HTTP_200_OK)
 
-        if len(request.query_params) != 0:
             page = request.query_params["page"]
             size = 10
-            try:
-                size = request.queryparams["size"]
-            except Exception as _:
-                pass
+            if request.query_params.get("size") is not None:
+                size = request.query_params["size"]
 
             paginator = Paginator(post, size)
             page_obj = paginator.get_page(page)
@@ -67,13 +73,8 @@ class GetPostsApiView(GenericAPIView):
             }
 
             return response.Response(result, status=status.HTTP_200_OK)
-        else:
-            result = {
-                "type": "posts",
-                "items": self.serializer_class(post, many=True).data
-            }
-
-            return response.Response(result, status=status.HTTP_200_OK)
+        except Exception as e:
+            return response.Response(f"Error: {e}", status=status.HTTP_400_BAD_REQUEST)
 
     def post(self, request, user_id):
         try:
@@ -162,9 +163,12 @@ class GetPostImageApiView(GenericAPIView):
     serializer_class = PostSerializer
 
     def get(self, request, author_id, post_id):
-        post = Post.objects.get(id=post_id)
+        try:
+            post = Post.objects.get(id=post_id)
 
-        if post.type == "image/png;base64" or post.type == "image/jpeg;base64":
-            return response.Response({"image": post.content}, status=status.HTTP_200_OK)
-        else:
-            return response.Response(status=status.HTTP_404_NOT_FOUND)
+            if post.type == "image/png;base64" or post.type == "image/jpeg;base64":
+                return response.Response({"image": post.content}, status=status.HTTP_200_OK)
+            else:
+                raise Exception
+        except Exception as e:
+            return response.Response(f"Error: {e}", status=status.HTTP_404_NOT_FOUND)
