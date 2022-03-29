@@ -101,8 +101,8 @@ class GetPostsApiView(GenericAPIView):
 
             result = self.serializer_class(post, many=False)
             return response.Response(result.data, status=status.HTTP_201_CREATED)
-        except Exception:
-            return response.Response("Error", status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return response.Response(f"Error: {e}", status=status.HTTP_400_BAD_REQUEST)
 
 
 class GetPostApiView(GenericAPIView):
@@ -116,7 +116,7 @@ class GetPostApiView(GenericAPIView):
 
             return response.Response(result, status=status.HTTP_200_OK)
         except Exception as e:
-            return response.Response(status=status.HTTP_404_NOT_FOUND)
+            return response.Response(f"Error: {e}", status=status.HTTP_404_NOT_FOUND)
 
     def post(self, request, user_id, post_id):
         try:
@@ -147,15 +147,15 @@ class GetPostApiView(GenericAPIView):
             else:
                 return response.Response(status=status.HTTP_401_UNAUTHORIZED)
         except Exception as e:
-            return response.Response(status=status.HTTP_400_BAD_REQUEST)
+            return response.Response(f"Error: {e}", status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, user_id, post_id):
         try:
             post = Post.objects.get(id=post_id)
             post.delete()
             return response.Response("Deleted", status.HTTP_202_ACCEPTED)
-        except Exception:
-            return response.Response(status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return response.Response(f"Error: {e}", status=status.HTTP_400_BAD_REQUEST)
 
 
 class GetPostImageApiView(GenericAPIView):
