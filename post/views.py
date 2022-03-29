@@ -76,8 +76,9 @@ class GetPostsApiView(GenericAPIView):
             return response.Response(result, status=status.HTTP_200_OK)
 
     def post(self, request, user_id):
-        author = Author.objects.get(id=user_id)
         try:
+            author = Author.objects.get(id=user_id)
+
             post = Post.objects.create(author=author)
             title = request.data["title"]
             description = request.data["description"]
