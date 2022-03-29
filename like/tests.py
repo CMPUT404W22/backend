@@ -6,7 +6,7 @@ from django.db import transaction
 from author.models import Author
 from post.models import Post
 from comment.models import Comment
-from notification.models import Notification
+from server_api.models import Server
 from rest_framework.test import APITestCase
 from rest_framework.test import APIClient
 from rest_framework import status
@@ -15,6 +15,9 @@ import copy
 class LikesTestCase(APITestCase):
 
     def setUp(self):
+        # create server
+        self.server: Server = Server.objects.create(server_address="remote_address", auth="username:password")
+
         # create users
         Author.objects.create_user(username="test1", password="password",
                                    display_name="test1", github="0")
@@ -101,7 +104,7 @@ class LikesTestCase(APITestCase):
         )
         return comment
 
-    def test_get_posts_likes(self):
+    def test_get_posts_likes_local(self):
         # testing get a list of likes from other authors on author id’s post post_id
 
         #author2 likes users post
@@ -110,7 +113,7 @@ class LikesTestCase(APITestCase):
         self.author2.post(f'/service/authors/{self.foreign_id2}/inbox', self.like_post_request_data, format='json')
 
         #get the list of people who liked users post
-        response = self.user.get(f'/service/authors/{self.id}/posts/{post.id}/likes', format='json')
+        response = self.user.get(f'/service/authors/{self.id}/posts/{post.id}/likes?origin=local', format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
 
@@ -163,13 +166,13 @@ class LikesTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 3)
 
-    def test_not_liked_posts(self):
-        # test trying to get likes on post that hasnt been liked
+    def test_not_liked_posts_local(self):
+        # test trying to get likes on post that hasn't been liked
         # have author1 create a post
         post = self.create_post(self.authorname1)
 
         # test when user did not like the post
-        response = self.author1.get(f'/service/authors/{self.foreign_id1}/posts/{post.id}/likes', format='json')
+        response = self.author1.get(f'/service/authors/{self.foreign_id1}/posts/{post.id}/likes?origin=local', format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 0)
 
