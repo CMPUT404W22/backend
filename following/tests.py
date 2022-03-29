@@ -61,13 +61,13 @@ class FollowersTestCase(APITestCase):
         self.client.put(f'/service/authors/{self.id}/followers/{self.foreign_id2}')
         response = self.client.get(f'/service/authors/{self.id}/followers/{self.foreign_id2}')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.content, b'"True"')
+        self.assertIn(b'"type":"author"', response.content)
 
     def test_get_not_follower(self):
         # check when not a follower
         response = self.client.get(f'/service/authors/{self.id}/followers/{self.foreign_id1}')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.content, b'"False"')
+        self.assertEqual(response.content, b'[]')
 
     def test_invalid_delete(self):
         # test when trying to delete follower that is not in database
