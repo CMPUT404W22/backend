@@ -45,7 +45,7 @@ class NotificationsApiView(GenericAPIView):
 
             result = {
                 "type": "inbox",
-                "items": [i for i in items]
+                "items": [json.loads(i) for i in items]
             }
             return response.Response(result, status.HTTP_200_OK)
 

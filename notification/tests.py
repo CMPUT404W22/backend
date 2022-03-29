@@ -15,6 +15,7 @@ class NotificationTestCase(APITestCase):
         self.author_id = self.author.id
 
         self.request = {"type": "Post"}
+        self.content = '{"type": "content"}'
 
         # Authenticate
         self.client = APIClient()
@@ -29,7 +30,7 @@ class NotificationTestCase(APITestCase):
     def test_get_contents(self):
         # add to DB
         # it should return 200 OK response and contents
-        Notification.objects.create(author=self.author, content="some content here")
+        Notification.objects.create(author=self.author, content=self.content)
         response = self.client.get(f'/service/authors/{self.author_id}/inbox')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         data = response.json()
@@ -57,7 +58,7 @@ class NotificationTestCase(APITestCase):
 
     def test_delete(self):
         # it should delete everything from the Notification table and return 200 OK
-        Notification.objects.create(author=self.author, content="some content")
+        Notification.objects.create(author=self.author, content=self.content)
         response = self.client.delete(f'/service/authors/{self.author_id}/inbox')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.content, b'"Deleted"')
