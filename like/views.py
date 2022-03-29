@@ -35,18 +35,17 @@ class GetLikeApiView(GenericAPIView):
 
     def get(self, request, user_id, post_id):
         # gets a list of likes from other authors on AUTHOR_ID’s post POST_ID
-        if request.GET.get("origin") == "local":
-            try:
+        try:
+            if request.GET.get("origin") == "local":
                 post = Post.objects.get(id=post_id, author=user_id)
                 likes = LikePost.objects.filter(post=post)
                 return response.Response(self.serializer_class(likes, many=True).data, status=status.HTTP_200_OK)
 
-            except Exception as e:
-                return response.Response(f"Error occurred: {e}", status.HTTP_404_NOT_FOUND)
-        else:
             server = Server.objects.get(server_address__icontains=f"{request.GET.get('origin')}")
             likes = GetAllPostLikes(server, user_id, post_id)
             return response.Response(likes, status=status.HTTP_200_OK)
+        except Exception as e:
+            return response.Response(f"Error occurred: {e}", status.HTTP_404_NOT_FOUND)
 
     def post(self, request, user_id, post_id):
         if request.GET.get("origin") == "local":
@@ -70,8 +69,8 @@ class GetLikeCommentApiView(GenericAPIView):
 
     def get(self, request, user_id, post_id, comment_id):
         try:
-            # post = Post.objects.get(id=post_id, author=user_id) # ensure that parameters passed are author's id, post id
-            comment = Comment.objects.get(id=comment_id)
+            post = Post.objects.get(id=post_id, author=user_id) # ensure that parameters passed are author's id, post id
+            comment = Comment.objects.get(id=comment_id, post=post)
             likes = LikeComment.objects.filter(comment=comment)
             return response.Response(self.serializer_class(likes, many=True).data, status=status.HTTP_200_OK)
 

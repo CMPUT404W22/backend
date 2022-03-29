@@ -4,4 +4,4 @@ echo "You need to enter your username and password for your mysql database in ./
 
 python3 -m venv .
 source venv/bin/activate
-pip install -r requirement.txt
+pip install -r requirements.txt
