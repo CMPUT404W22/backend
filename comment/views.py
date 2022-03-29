@@ -58,7 +58,7 @@ class GetCommentsApiView(GenericAPIView):
                 return response.Response(result, status=status.HTTP_200_OK)
 
             # else: request.GET.get("origin") is remote
-            server = Server.objects.get(server_address=f"{address}")
+            server = Server.objects.get(server_address__icontains=f"{address}")
             comments = GetAllPostComments(server, user_id, post_id)
             return response.Response(comments, status=status.HTTP_200_OK)
         except Exception as e:
