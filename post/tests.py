@@ -89,18 +89,6 @@ class FollowersTestCase(APITestCase):
         response = self.client.delete(f'/service/authors/{self.id}/posts/{invalidId}')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         
-    def test_invalid_post(self):
-        Invalid_Post = {
-            "id" : "33333",
-            "author" : "3333333",
-            "type" : "2333",
-            "title" : "ImgTitle",
-            "description" : "ImgDescription",
-            "content" : "Nice Image!",
-            "visibility" : "not",
-            "unlisted" : False,
-            "image" : "Here is image",
-            "categories" : "Img"
-        }
-        response = self.client.post(f'/service/authors/{self.foreignId1}/posts/', Invalid_Post)
+    def test_add_post_invalid_request(self):
+        response = self.client.post(f'/service/authors/{self.foreignId1}/posts/', {})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
