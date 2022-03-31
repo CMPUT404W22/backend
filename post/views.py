@@ -50,7 +50,8 @@ class GetPostsApiView(GenericAPIView):
 
     def get(self, request, user_id):
         try:
-            post = Post.objects.filter(author=user_id)
+            author = Author.objects.get(id=user_id)
+            post = Post.objects.filter(author=author).order_by("created")
 
             if len(request.query_params) == 0:
                 result = {
