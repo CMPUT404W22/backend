@@ -59,8 +59,10 @@ def SendLike(server, author, user_id, post_id):
 
     return like.status_code
 
+# content is a json object
 def SendContentToInbox(server, author_id, content):
+    headers = {'Content-type': 'application/json'}
+
     return requests.post(f"{server.server_address}authors/{author_id}/inbox",
         auth=HTTPBasicAuth(server.auth.split(":")[0], server.auth.split(":")[1]),
-        data=content)
-        
+        data=content, headers=headers)
