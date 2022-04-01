@@ -1,3 +1,5 @@
+import json
+
 import requests
 import dateutil.parser
 
@@ -43,4 +45,17 @@ def GetAllPostLikes(server, author, post):
     comments = requests.get(f"{server.server_address}authors/{author}/posts/{post}/likes",auth=HTTPBasicAuth(server.auth.split(":")[0], server.auth.split(":")[1]))
     return comments.json()
 
+def SendLike(server, author, user_id, post_id):
+
+    data = {
+        "summary": author["displayName"] + " likes your post",
+        "type": "like",
+        "author": author,
+        "object": f"{server.server_address}authors/{user_id}/posts/{post_id}"
+    }
+
+    headers = {'Content-type': 'application/json'}
+    like = requests.post(f"{server.server_address}authors/{user_id}/inbox", auth=HTTPBasicAuth(server.auth.split(":")[0], server.auth.split(":")[1]), data=json.dumps(data), headers=headers)
+
+    return like.status_code
 
