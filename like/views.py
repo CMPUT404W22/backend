@@ -1,3 +1,4 @@
+import response as response
 from django.shortcuts import render
 
 # Create your views here.
@@ -9,15 +10,17 @@ from like.models import LikePost, LikeComment
 from like.serializer import LikePostSerializer, LikeCommentSerializer
 from post.models import Post
 from comment.models import Comment
-from server_api.external import GetAllPostLikes
+from notification.models import Notification
+from server_api.external import GetAllPostLikes, SendLike
 from server_api.models import Server
+from author.serializer import AuthorSerializer
 
 
 def save_like_post(author, post):
     like_post = LikePost.objects.create(author=author,post=post)
     like_post.author = author
     like_post.post = post
-    like_post.summary = author.username + " Likes your post"
+    like_post.summary = author.username + " likes your post"
     like_post.save()
 
 
@@ -25,7 +28,7 @@ def save_like_comment(author, comment):
     like_comment = LikeComment.objects.create(author=author,comment=comment)
     like_comment.author = author
     like_comment.comment = comment
-    like_comment.summary = author.username + " Liked on your comment"
+    like_comment.summary = author.username + " liked on your comment"
     like_comment.save()
 
 
@@ -52,15 +55,30 @@ class GetLikeApiView(GenericAPIView):
             post = Post.objects.get(id=post_id)
             like = None
             try:
-                like = LikePost.objects.create(author=request.user, post=post, summary=f"{request.user.display_name} liked your post")
+                like = LikePost.objects.create(author=request.user, post=post,
+                                               summary=f"{request.user.display_name} likes your post")
                 like.save()
-            except:
+                notification = Notification.objects.create(author=request.user, content=like)
+                notification.save()
+            except Exception as e:
                 LikePost.objects.get(author=request.user, post=post).delete()
-                return response.Response({"created": False, "deleted": True}, status=status.HTTP_200_OK)
+                return response.Response({"created": 0, "deleted": True}, status=status.HTTP_200_OK)
 
-            return response.Response({"created": True}, status=status.HTTP_200_OK)
+            return response.Response({"created": 1}, status=status.HTTP_201_CREATED)
         else:
-            return response.Response(status=status.HTTP_501_NOT_IMPLEMENTED)
+            try:
+                server = Server.objects.get(server_address__icontains=f"{request.GET.get('origin')}")
+                author = AuthorSerializer(request.user, many=False).data
+                code = SendLike(server, author, user_id, post_id)
+                if code == 201:
+                    return response.Response({"created": 1}, status=status.HTTP_200_OK)
+                elif code == 200:
+                    return response.Response({"created": 2}, status=status.HTTP_200_OK)
+                else:
+                    return response.Response({"created": 3}, status=status.HTTP_200_OK)
+
+            except Exception as e:
+                return response.Response({"created": 0}, status=status.HTTP_200_OK)
 
 
 class GetLikeCommentApiView(GenericAPIView):
