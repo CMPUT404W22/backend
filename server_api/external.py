@@ -43,4 +43,7 @@ def GetAllPostLikes(server, author, post):
     comments = requests.get(f"{server.server_address}authors/{author}/posts/{post}/likes",auth=HTTPBasicAuth(server.auth.split(":")[0], server.auth.split(":")[1]))
     return comments.json()
 
-
+def SendContentToInbox(server, author_id, content):
+    return requests.post(f"{server.server_address}authors/{author_id}/inbox",
+        auth=HTTPBasicAuth(server.auth.split(":")[0], server.auth.split(":")[1]),
+        data=content)
