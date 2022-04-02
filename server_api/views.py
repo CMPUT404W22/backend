@@ -1,5 +1,3 @@
-import base64
-
 from django.core.files.base import ContentFile
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import response, status
@@ -17,7 +15,9 @@ from post.models import Post
 from post.serializer import PostSerializer
 from author.host import base_url
 from following.models import Following
+from like.views import save_like_post, save_like_comment
 
+import json
 
 # region authors
 class GetAuthorsApiView(GenericAPIView):
@@ -207,18 +207,35 @@ class GetLikedApiView(GenericAPIView):
 
 
 # region inbox
+def parse_contents(author, data_json):
+    # if contents is a LIKE, add to LikeComment/LikePost database
+    # otherwise, return.
+    if(data_json["type"].lower() != "like"):
+        return
+
+    summary: str = data_json["summary"]
+    object_url = data_json["object"].split('/')
+    last_index = len(object_url) - 1
+
+    if 'post' in summary.lower():
+        post = Post.objects.get(id=object_url[last_index])
+        save_like_post(author, post)
+    elif 'comment' in summary.lower():
+        comment = Comment.objects.get(id=object_url[last_index])
+        save_like_comment(author, comment)
+    else:
+        raise Exception(f"Invalid summary {summary}")
+
 class SendToInboxApiView(GenericAPIView):
     authentication_classes = [BasicAuthentication, ]
     serializer_class = None
 
     def post(self, request, author_id):
-        author = Author.objects.get(id=author_id)
         try:
-            notification = Notification.objects.create(author=author)
-            content = request.data['content']
-
-            notification.content = content
-            notification.save()
+            author = Author.objects.get(id=author_id)
+            content = json.dumps(request.data)
+            Notification.objects.create(author=author, content=content)
+            parse_contents(author, request.data)
             return response.Response("Notification Created", status=status.HTTP_201_CREATED)
         except Exception as e:
             return response.Response(f"Failed to post to inbox: {e}", status=status.HTTP_400_BAD_REQUEST)
