@@ -1,5 +1,3 @@
-from django.core.files.base import ContentFile
-from drf_yasg.utils import swagger_auto_schema
 from rest_framework import response, status
 from rest_framework.authentication import BasicAuthentication
 from rest_framework.generics import GenericAPIView
