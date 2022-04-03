@@ -8,7 +8,7 @@ from like.serializer import LikePostSerializer, LikeCommentSerializer
 from post.models import Post
 from comment.models import Comment
 from notification.models import Notification
-from server_api.external import GetAllPostLikes, SendLike
+from server_api.external import GetAllPostLikes, SendLike, GetAllCommentLikes, GetLiked
 from server_api.models import Server
 from author.serializer import AuthorSerializer
 
@@ -84,10 +84,15 @@ class GetLikeCommentApiView(GenericAPIView):
 
     def get(self, request, user_id, post_id, comment_id):
         try:
-            post = Post.objects.get(id=post_id, author=user_id) # ensure that parameters passed are author's id, post id
-            comment = Comment.objects.get(id=comment_id, post=post)
-            likes = LikeComment.objects.filter(comment=comment)
-            return response.Response(self.serializer_class(likes, many=True).data, status=status.HTTP_200_OK)
+            if request.GET.get("origin") == "local":
+                post = Post.objects.get(id=post_id, author=user_id) # ensure that parameters passed are author's id, post id
+                comment = Comment.objects.get(id=comment_id, post=post)
+                likes = LikeComment.objects.filter(comment=comment)
+                return response.Response(self.serializer_class(likes, many=True).data, status=status.HTTP_200_OK)
+            else:
+                server = Server.objects.get(server_address__icontains=f"{request.GET.get('origin')}")
+                likes = GetAllCommentLikes(server, user_id, post_id,comment_id)
+                return response.Response(likes, status=status.HTTP_200_OK)
 
         except Exception as e:
             return response.Response(f"Error occurred: {e}", status.HTTP_404_NOT_FOUND)
@@ -110,12 +115,17 @@ class GetLikedApiView(GenericAPIView):
     def get(self, request, user_id):
         # gets posts and comment objects that the author likes
         try:
-            author = Author.objects.get(id=user_id)
-            liked_posts = LikePost.objects.filter(author=author)
-            liked_comments = LikeComment.objects.filter(author=author)
-            result = self.serializer_class_post(liked_posts, many=True).data + self.serializer_class_comment(
-                liked_comments, many=True).data
-            return response.Response(result, status=status.HTTP_200_OK)
+            if request.GET.get("origin") == "local":
+                author = Author.objects.get(id=user_id)
+                liked_posts = LikePost.objects.filter(author=author)
+                liked_comments = LikeComment.objects.filter(author=author)
+                result = self.serializer_class_post(liked_posts, many=True).data + self.serializer_class_comment(
+                    liked_comments, many=True).data
+                return response.Response(result, status=status.HTTP_200_OK)
+            else:
+                server = Server.objects.get(server_address__icontains=f"{request.GET.get('origin')}")
+                likes = GetLiked(server, user_id)
+                return response.Response(likes, status=status.HTTP_200_OK)
 
         except Exception as e:
             return response.Response(f"Error: {e}", status.HTTP_404_NOT_FOUND)

@@ -34,7 +34,7 @@ class LikeCommentSerializer(serializers.ModelSerializer):
         representation['type'] = "Like"
         representation['@context'] = "https://www.w3.org/ns/activitystreams"
         representation['summary'] = instance.summary
-        representation['author'] = AuthorSerializer(instance.get_author(), many=False).data
-        representation['object'] = f"{base_url}/authors/{instance.author.id}/posts/{instance.comment.post.id}"
+        representation['author'] = instance.get_author()
+        representation['object'] = f"{base_url}/authors/{instance.get_author_id()}/posts/{instance.comment.post.id}/comment/{instance.comment.id}"
 
         return representation

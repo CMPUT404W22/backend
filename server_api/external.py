@@ -55,12 +55,26 @@ def GetAllPostComments(server, author, post):
 
 
 def GetAllPostLikes(server, author, post):
-    comments = requests.get(f"{server.server_address}authors/{author}/posts/{post}/likes",auth=HTTPBasicAuth(server.auth.split(":")[0], server.auth.split(":")[1]))
+    post = requests.get(f"{server.server_address}authors/{author}/posts/{post}/likes",auth=HTTPBasicAuth(server.auth.split(":")[0], server.auth.split(":")[1]))
+    return post.json()
+
+
+def GetAllCommentLikes(server, author, post, comment):
+    comments = requests.get(f"{server.server_address}authors/{author}/posts/{post}/comments/{comment}/likes",
+                        auth=HTTPBasicAuth(server.auth.split(":")[0], server.auth.split(":")[1]))
     return comments.json()
+
+
+def GetLiked(server, author):
+    liked = requests.get(f"{server.server_address}authors/{author}/liked",
+                        auth=HTTPBasicAuth(server.auth.split(":")[0], server.auth.split(":")[1]))
+    return liked.json()
+
 
 def GetAllFollowers(server, author):
     followers = requests.get(f"{server.server_address}authors/{author}/followers", auth=HTTPBasicAuth(server.auth.split(":")[0], server.auth.split(":")[1]))
     return followers.json()
+
 
 def CheckFollower(server, author, follower):
     follower_json = None
@@ -75,6 +89,7 @@ def CheckFollower(server, author, follower):
         follower_json = follower.json()
     
     return follower_json
+
 
 def delete_follower(server, author_id, follower_id):
     delete = requests.delete(f"{server.server_address}authors/{author_id}/followers/{follower_id}", auth=HTTPBasicAuth(server.auth.split(":")[0], server.auth.split(":")[1]))
