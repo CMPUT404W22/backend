@@ -92,8 +92,7 @@ class EditFollowersApiView(GenericAPIView):
         except Exception as e:
             return response.Response(f"Error while trying to get followers: {e}", status=status.HTTP_400_BAD_REQUEST)
 
-
-class FollowRequestApiView(GenericAPIView):
+class AllFollowRequestsApiView(GenericAPIView):
     def get(self, request, author_id):
         try:
             author = Author.objects.get(id=author_id)
@@ -111,6 +110,20 @@ class FollowRequestApiView(GenericAPIView):
         except Exception as e:
             return response.Response(f"Error while trying to get list of follow requests: {e}", status=status.HTTP_400_BAD_REQUEST)
 
+class FollowRequestApiView(GenericAPIView):
+    def get(self, request, receiving_author_id, requesting_author_id):
+        try:
+            author = Author.objects.get(id=receiving_author_id)
+            requesting_author = Author.objects.get(id=requesting_author_id)
+            follow_requests = FollowRequest.objects.filter(author=author, requesting_author=requesting_author)
+            
+            if len(follow_requests) > 0:
+                serialized_follow_request = FollowRequestSerializer(follow_requests[0]).data
+                return response.Response([serialized_follow_request], status.HTTP_200_OK)
+            return response.Response([], status.HTTP_200_OK)
+        except Exception as e:
+            return response.Response(f"Error while trying to get list of follow requests: {e}", status=status.HTTP_400_BAD_REQUEST)
+
     def post(self, request, receiving_author_id, requesting_author_id):
         try:
             receiving_author = Author.objects.get(id=receiving_author_id)
@@ -124,7 +137,8 @@ class FollowRequestApiView(GenericAPIView):
         try:
             receiving_author = Author.objects.get(id=receiving_author_id)
             requesting_author = Author.objects.get(id=requesting_author_id)
-            FollowRequest.objects.filter(author=receiving_author, requesting_author=requesting_author).delete()
+            fr = FollowRequest.objects.filter(author=receiving_author, requesting_author=requesting_author)
+            fr.delete()
             return response.Response("Follow request successfully deleted", status.HTTP_200_OK)
         except Exception as e:
             return response.Response(f"Error while trying to delete follow request: {e}", status=status.HTTP_400_BAD_REQUEST)
