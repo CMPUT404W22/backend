@@ -12,17 +12,17 @@ import json
 def parse_contents(author, data_json):
     # if contents is a LIKE, add to LikeComment/LikePost database
     # otherwise, return.
-    if(data_json["type"] != "Like"):
+    if(data_json["type"].lower() != "like"):
         return
 
     summary: str = data_json["summary"]
     object_url = data_json["object"].split('/')
     last_index = len(object_url) - 1
 
-    if('post' in summary.lower()):
+    if 'post' in summary.lower():
         post = Post.objects.get(id=object_url[last_index])
         save_like_post(author, post)
-    elif('comment' in summary.lower()):
+    elif 'comment' in summary.lower():
         comment = Comment.objects.get(id=object_url[last_index])
         save_like_comment(author, comment)
     else:

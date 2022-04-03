@@ -1,3 +1,5 @@
+import json
+
 import requests
 import dateutil.parser
 
@@ -60,3 +62,24 @@ def CheckFollower(server, author, follower):
         follower_json = follower.json()
     # print(follower_json)
     return follower_json
+def SendLike(server, author, user_id, post_id):
+
+    data = {
+        "summary": author["displayName"] + " likes your post",
+        "type": "like",
+        "author": author,
+        "object": f"{server.server_address}authors/{user_id}/posts/{post_id}"
+    }
+
+    headers = {'Content-type': 'application/json'}
+    like = requests.post(f"{server.server_address}authors/{user_id}/inbox", auth=HTTPBasicAuth(server.auth.split(":")[0], server.auth.split(":")[1]), data=json.dumps(data), headers=headers)
+
+    return like.status_code
+
+# content is a json object
+def SendContentToInbox(server, author_id, content):
+    headers = {'Content-type': 'application/json'}
+
+    return requests.post(f"{server.server_address}authors/{author_id}/inbox",
+        auth=HTTPBasicAuth(server.auth.split(":")[0], server.auth.split(":")[1]),
+        data=content, headers=headers)

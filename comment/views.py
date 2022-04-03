@@ -84,6 +84,17 @@ class GetCommentsApiView(GenericAPIView):
 class CommentApiView(GenericAPIView):
     authentication_classes = [BasicAuthentication, ]
 
+    def get(self, request, user_id, post_id, comment_id):
+        try:
+            if request.user:
+                comment = Comment.objects.get(id=comment_id)
+                return response.Response(CommentSerializer(comment), status=status.HTTP_204_NO_CONTENT)
+            else:
+                return response.Response(status=status.HTTP_403_FORBIDDEN)
+        except Exception as e:
+            return response.Response(f"Error: {e}", status=status.HTTP_400_BAD_REQUEST)
+
+
     def delete(self, request, user_id, post_id, comment_id):
         try:
             comment = Comment.objects.get(id=comment_id)
