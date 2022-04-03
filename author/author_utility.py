@@ -11,15 +11,15 @@ def get_author(url):
     origin, server = get_node(url)
 
     if origin == "local":
-        return AuthorSerializer(Author.objects.get(id=author_id), many=False)
+        return AuthorSerializer(Author.objects.get(id=author_id), many=False).data
     else:
         return GetAuthor(server, author_id)
 
 
 def get_author_id(url):
-    result = re.findall("/(?<=authors/).*?(?=/)/g", url)
+    result = re.findall("(?<=authors/).*?(?=/)", url)
     if len(result) == 0:
-        result = re.findall("/(?<=authors/).*/g", url)
+        result = re.findall("(?<=authors/).*", url)
         return result[0]
     else:
         return result[0]
