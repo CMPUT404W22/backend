@@ -60,8 +60,13 @@ def CheckFollower(server, author, follower):
     elif server.server_address == "https://c404-social-distribution.herokuapp.com/service/":
         follower = requests.get(f"{server.server_address}authors/{author}/followers/{follower}", auth=HTTPBasicAuth(server.auth.split(":")[0], server.auth.split(":")[1]))
         follower_json = follower.json()
-    # print(follower_json)
+    
     return follower_json
+
+def delete_follower(server, author, follower):
+    like = requests.delete(f"{server.server_address}authors/{author}/followers/{follower}", auth=HTTPBasicAuth(server.auth.split(":")[0], server.auth.split(":")[1]))
+    return requests.status_codes
+
 def SendLike(server, author, user_id, post_id):
 
     data = {

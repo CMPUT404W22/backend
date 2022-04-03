@@ -6,7 +6,7 @@ from author.serializer import AuthorSerializer
 from following.models import Following, FollowRequest
 from following.serializer import FollowRequestSerializer
 from server_api.models import Server
-from server_api.external import GetAllFollowers, CheckFollower
+from server_api.external import GetAllFollowers, CheckFollower, delete_follower
 
 
 class GetFollowersApiView(GenericAPIView):
@@ -43,12 +43,17 @@ class EditFollowersApiView(GenericAPIView):
     def delete(self, request, user_id, foreign_user_id):
         # remove FOREIGN_AUTHOR_ID as a follower of AUTHORs_ID
         try:
-            author = Author.objects.get(id=user_id)
-            author_serializer = self.serializer_class(author, many=False).data
-            follower = Author.objects.get(id=foreign_user_id)
-            follower_serializer = self.serializer_class(follower, many=False).data
-            Following.objects.filter(author=follower_serializer['id'], following=author_serializer['id']).delete()
-            return response.Response("Deleted", status.HTTP_202_ACCEPTED)
+            address = request.GET.get("origin")
+            if address == "local":
+                author = Author.objects.get(id=user_id)
+                author_serializer = self.serializer_class(author, many=False).data
+                follower = Author.objects.get(id=foreign_user_id)
+                follower_serializer = self.serializer_class(follower, many=False).data
+                Following.objects.filter(author=follower_serializer['id'], following=author_serializer['id']).delete()
+                return response.Response("Deleted", status.HTTP_202_ACCEPTED)
+            server = Server.objects.get(server_address__icontains=f"{address}")
+            delete = delete_follower(server, user_id, foreign_user_id)
+            return response.Response(delete, status.HTTP_202_ACCEPTED)
         except Exception as e:
             return response.Response(f"Error while trying to delete: {e}", status=status.HTTP_404_NOT_FOUND)
 
@@ -77,11 +82,11 @@ class EditFollowersApiView(GenericAPIView):
                 for follower in followers:
                     if follower.author == follower_serializer['id']:
                         return response.Response([follower_serializer], status.HTTP_200_OK)
-            
+                return response.Response([], status.HTTP_200_OK)
+
             server = Server.objects.get(server_address__icontains=f"{address}")
-            # print(server)
             follower = CheckFollower(server, user_id, foreign_user_id)
-            if follower == "Not Found!" or follower == [] or follower == {}:
+            if follower == "Not Found!" or follower == [] or follower == {} or follower == False:
                 return response.Response([], status.HTTP_200_OK)
             return response.Response([follower], status.HTTP_200_OK)
         except Exception as e:
