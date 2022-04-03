@@ -45,6 +45,23 @@ def GetAllPostLikes(server, author, post):
     comments = requests.get(f"{server.server_address}authors/{author}/posts/{post}/likes",auth=HTTPBasicAuth(server.auth.split(":")[0], server.auth.split(":")[1]))
     return comments.json()
 
+def GetAllFollowers(server, author):
+    followers = requests.get(f"{server.server_address}authors/{author}/followers", auth=HTTPBasicAuth(server.auth.split(":")[0], server.auth.split(":")[1]))
+    return followers.json()
+
+def CheckFollower(server, author, follower):
+    follower_json = None
+    if server.server_address == "https://psdt11.herokuapp.com/":
+        follower = requests.get(f"{server.server_address}authors/{author}/followers/{follower}", auth=HTTPBasicAuth(server.auth.split(":")[0], server.auth.split(":")[1]))
+        follower_json = follower.json()["items"]
+    elif server.server_address == "https://squawker-cmput404.herokuapp.com/api/":
+        follower = requests.get(f"{server.server_address}authors/{author}/followers/{follower}", auth=HTTPBasicAuth(server.auth.split(":")[0], server.auth.split(":")[1]))
+        follower_json = follower.json()["detail"]
+    elif server.server_address == "https://c404-social-distribution.herokuapp.com/service/":
+        follower = requests.get(f"{server.server_address}authors/{author}/followers/{follower}", auth=HTTPBasicAuth(server.auth.split(":")[0], server.auth.split(":")[1]))
+        follower_json = follower.json()
+    # print(follower_json)
+    return follower_json
 def SendLike(server, author, user_id, post_id):
 
     data = {

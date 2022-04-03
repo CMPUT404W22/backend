@@ -5,6 +5,8 @@ from author.models import Author
 from author.serializer import AuthorSerializer
 from following.models import Following, FollowRequest
 from following.serializer import FollowRequestSerializer
+from server_api.models import Server
+from server_api.external import GetAllFollowers, CheckFollower
 
 
 class GetFollowersApiView(GenericAPIView):
@@ -14,14 +16,21 @@ class GetFollowersApiView(GenericAPIView):
     def get(self, request, user_id):
         # gets a list of authors who are user_id's followers
         try:
-            author = Author.objects.get(id=user_id)
-            followers = [x.author for x in Following.objects.filter(following=author)]
-
-            result = {
-                "type": "followers",
-                "items": AuthorSerializer(followers, many=True).data
-            }
-            return response.Response(result, status.HTTP_200_OK)
+            address = request.GET.get("origin")
+            if address == "local":
+                author = Author.objects.get(id=user_id)
+                author_serializer = self.serializer_class(author, many=False).data
+                followers = [Author.objects.get(id = x.author.split('/')[-1]) for x in Following.objects.filter(following=author_serializer['id'])]
+                result = {
+                    "type": "followers",
+                    "items": AuthorSerializer(followers, many=True).data
+                }
+                return response.Response(result, status.HTTP_200_OK)
+            
+            # remote
+            server = Server.objects.get(server_address__icontains=f"{address}")
+            followers = GetAllFollowers(server, user_id)
+            return response.Response(followers, status=status.HTTP_200_OK)
 
         except Exception as e:
             return response.Response(status=status.HTTP_400_BAD_REQUEST)
@@ -34,9 +43,11 @@ class EditFollowersApiView(GenericAPIView):
     def delete(self, request, user_id, foreign_user_id):
         # remove FOREIGN_AUTHOR_ID as a follower of AUTHORs_ID
         try:
-            follower = Author.objects.get(id=foreign_user_id)
             author = Author.objects.get(id=user_id)
-            Following.objects.filter(author=follower, following=author).delete()
+            author_serializer = self.serializer_class(author, many=False).data
+            follower = Author.objects.get(id=foreign_user_id)
+            follower_serializer = self.serializer_class(follower, many=False).data
+            Following.objects.filter(author=follower_serializer['id'], following=author_serializer['id']).delete()
             return response.Response("Deleted", status.HTTP_202_ACCEPTED)
         except Exception as e:
             return response.Response(f"Error while trying to delete: {e}", status=status.HTTP_404_NOT_FOUND)
@@ -45,22 +56,34 @@ class EditFollowersApiView(GenericAPIView):
         # Add FOREIGN_AUTHOR_ID as follower of AUTHOR_ID
         try:
             author = Author.objects.get(id=user_id)
+            author_serializer = self.serializer_class(author, many=False).data
             follower = Author.objects.get(id=foreign_user_id)
-            Following.objects.create(author=follower, following=author)
+            follower_serializer = self.serializer_class(follower, many=False).data
+            Following.objects.create(author=follower_serializer['id'], following=author_serializer['id'])
             return response.Response("Added", status.HTTP_201_CREATED)
         except Exception as e:
-            return response.Response(f"Error while trying to add: {e}", status=status.HTTP_404_NOT_FOUND)
+            return response.Response(f"Error while trying to add: {e}", status=status.HTTP_400_BAD_REQUEST)
 
     def get(self, request, user_id, foreign_user_id):
         # check if FOREIGN_AUTHOR_ID is a follower of AUTHOR_ID
         try:
-            author = Author.objects.get(id=user_id)
-            is_follower = Author.objects.get(id=foreign_user_id)
-            followers = Following.objects.filter(following=author)
-            for follower in followers:
-                if follower.author == is_follower:
-                    return response.Response([self.serializer_class(is_follower, many=False).data], status.HTTP_200_OK)
-            return response.Response([], status.HTTP_200_OK)
+            address = request.GET.get("origin")
+            if address == "local":
+                author = Author.objects.get(id=user_id)
+                author_serializer = self.serializer_class(author, many=False).data
+                is_follower = Author.objects.get(id=foreign_user_id)
+                follower_serializer = self.serializer_class(is_follower, many=False).data
+                followers = Following.objects.filter(following=author_serializer['id'])
+                for follower in followers:
+                    if follower.author == follower_serializer['id']:
+                        return response.Response([follower_serializer], status.HTTP_200_OK)
+            
+            server = Server.objects.get(server_address__icontains=f"{address}")
+            # print(server)
+            follower = CheckFollower(server, user_id, foreign_user_id)
+            if follower == "Not Found!" or follower == [] or follower == {}:
+                return response.Response([], status.HTTP_200_OK)
+            return response.Response([follower], status.HTTP_200_OK)
         except Exception as e:
             return response.Response(f"Error while trying to get followers: {e}", status=status.HTTP_400_BAD_REQUEST)
 
