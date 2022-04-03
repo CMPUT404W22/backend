@@ -8,12 +8,14 @@ from rest_framework.generics import GenericAPIView
 
 
 from author.models import Author
+from author.serializer import AuthorSerializer
 from following.models import Following
 from post.serializer import PostSerializer
 from post.models import Post, Visibility, PostType
 import operator
 
-from server_api.external import GetAllPosts
+from server_api.external import GetAllPosts, GetPost
+from server_api.models import Server
 
 
 class GetHomePagePosts(GenericAPIView):
@@ -26,7 +28,7 @@ class GetHomePagePosts(GenericAPIView):
             posts = None
             if request_type == "all":
                 posts = Post.objects.filter(visibility="Public")
-                following = Following.objects.filter(author=request.user)
+                following = Following.objects.filter(author=AuthorSerializer(request.user, many=False).data["id"])
                 posts | Post.objects.filter(author=request.user)
 
                 for i in following:
@@ -43,6 +45,7 @@ class GetHomePagePosts(GenericAPIView):
             return response.Response(self.serializer_class(posts, many=True).data, status=status.HTTP_200_OK)
         except Exception as e:
             return response.Response(f"Error: {e}", status=status.HTTP_400_BAD_REQUEST)
+
 
 class GetPostsApiView(GenericAPIView):
     authentication_classes = [BasicAuthentication, ]
@@ -173,3 +176,25 @@ class GetPostImageApiView(GenericAPIView):
                 raise Exception
         except Exception as e:
             return response.Response(f"Error: {e}", status=status.HTTP_404_NOT_FOUND)
+
+
+class GetSinglePostApiView(GenericAPIView):
+    authentication_classes = [BasicAuthentication, ]
+    serializer_class = PostSerializer
+
+    def get(self, request):
+        origin = request.GET.get('origin')
+        author = request.GET.get('author')
+        post = request.GET.get('post')
+
+        if origin == "local":
+            return response.Response(PostSerializer(Post.objects.get(id=post), many=False).data, status=status.HTTP_200_OK)
+        else:
+            server = Server.objects.get(server_address__icontains=f"{origin}")
+            return response.Response(GetPost(server, author, post), status=status.HTTP_200_OK)
+
+
+
+
+
+

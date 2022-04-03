@@ -9,6 +9,10 @@ from comment.models import Comment
 from like.views import save_like_post, save_like_comment
 import json
 
+from server_api.external import SendContentToInbox
+from server_api.models import Server
+
+
 def parse_contents(author, data_json):
     # if contents is a LIKE, add to LikeComment/LikePost database
     # otherwise, return.
@@ -27,6 +31,7 @@ def parse_contents(author, data_json):
         save_like_comment(author, comment)
     else:
         raise Exception(f"Invalid summary {summary}")
+
 
 # Create your views here.
 class NotificationsApiView(GenericAPIView):
@@ -53,14 +58,24 @@ class NotificationsApiView(GenericAPIView):
             return response.Response(f"Failed to get notifications: {e}", status=status.HTTP_400_BAD_REQUEST)
 
     def post(self, request, user_id):
-        try:
-            content = json.dumps(request.data)
-            author = Author.objects.get(id=user_id)
-            Notification.objects.create(author=author, content=content)
-            parse_contents(author, request.data)
-            return response.Response("Added notification", status=status.HTTP_201_CREATED)
-        except Exception as e:
-            return response.Response(f"Failed to post to inbox: {e}", status=status.HTTP_400_BAD_REQUEST)
+        origin = request.GET.get("origin")
+
+        if origin == "local":
+            try:
+                content = json.dumps(request.data)
+                author = Author.objects.get(id=user_id)
+                Notification.objects.create(author=author, content=content)
+                parse_contents(author, request.data)
+                return response.Response("Added notification", status=status.HTTP_201_CREATED)
+            except Exception as e:
+                return response.Response(f"Failed to post to inbox: {e}", status=status.HTTP_400_BAD_REQUEST)
+        else:
+            server = Server.objects.get(server_address__icontains=f"{origin}")
+            ret = SendContentToInbox(server, user_id, json.dumps(request.data))
+            if ret:
+                return response.Response("Added notification", status=status.HTTP_201_CREATED)
+            else:
+                return response.Response(f"Failed to post to inbox", status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, user_id):
         try:
