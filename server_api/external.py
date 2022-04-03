@@ -42,6 +42,13 @@ def GetAllPosts():
     return result
 
 
+def GetPost(server, author, post):
+    posts = requests.get(f"{server.server_address}authors/{author}/posts/{post}",
+                         auth=HTTPBasicAuth(server.auth.split(":")[0], server.auth.split(":")[1]))
+
+    return posts.json()
+
+
 def GetAllPostComments(server, author, post):
     comments = requests.get(f"{server.server_address}authors/{author}/posts/{post}/comments", auth=HTTPBasicAuth(server.auth.split(":")[0], server.auth.split(":")[1]))
     return comments.json()
