@@ -18,6 +18,12 @@ def GetAllAuthors():
     return result
 
 
+def GetAuthor(server, id):
+    resp = requests.get(f"{server.server_address}author/{id}",
+                        auth=HTTPBasicAuth(server.auth.split(":")[0], server.auth.split(":")[1]))
+    return resp.json()["items"]
+
+
 def GetAllPosts():
     servers = Server.objects.all()
     result = []
@@ -67,6 +73,7 @@ def delete_follower(server, author_id, follower_id):
     delete = requests.delete(f"{server.server_address}authors/{author_id}/followers/{follower_id}", auth=HTTPBasicAuth(server.auth.split(":")[0], server.auth.split(":")[1]))
     return delete.status_codes
 
+
 def SendLike(server, author, user_id, post_id):
 
     data = {
@@ -81,10 +88,13 @@ def SendLike(server, author, user_id, post_id):
 
     return like.status_code
 
+
 # content is a json object
 def SendContentToInbox(server, author_id, content):
     headers = {'Content-type': 'application/json'}
 
-    return requests.post(f"{server.server_address}authors/{author_id}/inbox",
+    req = requests.post(f"{server.server_address}authors/{author_id}/inbox",
         auth=HTTPBasicAuth(server.auth.split(":")[0], server.auth.split(":")[1]),
         data=content, headers=headers)
+
+    return req.status_code < 299
