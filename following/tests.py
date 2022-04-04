@@ -1,9 +1,21 @@
 from author.models import Author
+from author.serializer import AuthorSerializer
+from following.models import Following
 from rest_framework.test import APITestCase, APIClient
 from rest_framework import status
+from server_api.models import Server
 
 class FollowersTestCase(APITestCase):
+    # helper functions
+    def addFollower(self, follower, following):
+        follower_serializer = AuthorSerializer(follower, many=False).data
+        following_serializer = AuthorSerializer(following, many=False).data
+        Following.objects.create(author=follower_serializer["id"], following=following_serializer["id"])
+
     def setUp(self):
+        # create server
+        self.server: Server = Server.objects.create(server_address="remote_address", auth="username:password")
+
         # create users
         Author.objects.create_user(username="test1", password="password",
                                    display_name="test1", github="0")
@@ -29,11 +41,26 @@ class FollowersTestCase(APITestCase):
         self.client.login(username='test1', password='password')
 
     # GetFriendsApiView region
-    def test_get_followers(self):
+    def test_get_followers_local_empty(self):
         # testing get before adding any followers
-        response = self.client.get(f'/service/authors/{self.id}/followers')
+        response = self.client.get(f'/service/authors/{self.id}/followers?origin=local')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.content, b'{"type":"followers","items":[]}')
+
+
+    def test_get_followers_local(self):
+        # testing get before adding any followers
+        self.addFollower(self.author2, self.author1)
+
+        response = self.client.get(f'/service/authors/{self.author1.id}/followers?origin=local')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        response_data = response.json()
+        self.assertEqual(len(response_data["items"]), 1)
+
+    def test_get_followers_remote(self):
+        response = self.client.get(f'/service/authors/{self.author1.id}/followers?origin={self.server.server_address}')
+
     # endof GetFriendsApiView region
 
     # EditFollowersApiView region
@@ -47,6 +74,7 @@ class FollowersTestCase(APITestCase):
         # check that it was added to the database
         response = self.client.get(f'/service/authors/{self.id}/followers')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+        
         self.assertNotEqual(response.content, b'{"type":"followers","items":[]}')
 
         # test delete
