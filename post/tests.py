@@ -78,7 +78,7 @@ class PostTestCase(APITestCase):
         response2 = self.client.get(f'/service/authors/{self.foreignId1}/posts/{self.foreignId1}')
         self.assertEqual(response1.status_code, status.HTTP_200_OK)
         self.assertEqual(response2.status_code, status.HTTP_200_OK)
-        # if self.post1 works, then self.post2 works in the same way
+        # self.post1
         self.assertEqual(self.post1.id, self.id)
         self.assertEqual(self.post1.author, self.user)
         self.assertEqual(self.post1.type, 0)
@@ -88,12 +88,20 @@ class PostTestCase(APITestCase):
         self.assertEqual(self.post1.visibility, 0)
         self.assertEqual(self.post1.unlisted, False)
         self.assertEqual(self.post1.categories, "Nice")
+        # # self.post2 works in the same way
 
     def test_post_post(self):
         request = self.Image_Post
         response = self.client.post(f'/service/authors/{self.id}/posts/', request)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         
+        response2 = self.client.get(f'/service/authors/{self.id}/posts/')
+        self.assertEqual(response2.status_code, status.HTTP_200_OK)
+        # the user should have 2 posts now
+        # if the post posted successfully
+        posts = Post.objects.filter(author=self.user)
+        self.assertEqual(len(posts), 2)
+    
 
     def test_delete_posts(self):
         # test deleting a post
