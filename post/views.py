@@ -1,16 +1,13 @@
-import base64
-
 from django.core.paginator import Paginator
 from django.db.models import Q
 from rest_framework import response, status
 from rest_framework.authentication import BasicAuthentication
 from rest_framework.generics import GenericAPIView
-
-
 from author.models import Author
+from author.serializer import AuthorSerializer
 from following.models import Following
 from post.serializer import PostSerializer
-from post.models import Post, Visibility, PostType
+from post.models import Post, Visibility
 import operator
 
 from server_api.external import GetAllPosts
