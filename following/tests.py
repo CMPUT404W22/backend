@@ -8,10 +8,11 @@ from unittest.mock import Mock, patch
 
 class FollowersTestCase(APITestCase):
     # helper functions
-    def addFollower(self, follower, following):
-        follower_serializer = AuthorSerializer(follower, many=False).data
-        following_serializer = AuthorSerializer(following, many=False).data
+    def addFollower(self, follower_serializer, following_serializer):
         Following.objects.create(author=follower_serializer["id"], following=following_serializer["id"])
+
+    def checkFollower(self, follower_serializer, following_serializer):
+        return Following.objects.filter(author=follower_serializer["id"], following=following_serializer["id"])
 
     def setUp(self):
         # create server
@@ -29,10 +30,12 @@ class FollowersTestCase(APITestCase):
 
         # get the ids of the users
         self.author1: Author = Author.objects.get(username="user1")
-        self.foreign_id1 = self.author1.id
+        self.author1_id = self.author1.id
+        self.author1_serializer = AuthorSerializer(self.author1, many=False).data
 
         self.author2: Author = Author.objects.get(username="user2")
-        self.foreign_id2 = self.author2.id
+        self.author2_id = self.author2.id
+        self.author2_serializer = AuthorSerializer(self.author2, many=False).data
 
         self.user = Author.objects.get(username="test1")
         self.id = self.user.id
@@ -55,16 +58,16 @@ class FollowersTestCase(APITestCase):
     # GetFollowersApiView region
     def test_get_followers_local_empty(self):
         # it should return an empty list if there are no followers
-        response = self.client.get(f'/service/authors/{self.id}/followers?origin=local')
+        response = self.client.get(f'/service/authors/{self.author1_id}/followers?origin=local')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.content, b'{"type":"followers","items":[]}')
 
 
     def test_get_followers_local(self):
         # it should have a list of followers in response["items"] if we add a follower
-        self.addFollower(self.author2, self.author1)
+        self.addFollower(self.author2_serializer, self.author1_serializer)
 
-        response = self.client.get(f'/service/authors/{self.author1.id}/followers?origin=local')
+        response = self.client.get(f'/service/authors/{self.author1_id}/followers?origin=local')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         response_data = response.json()
@@ -75,7 +78,7 @@ class FollowersTestCase(APITestCase):
     def test_get_followers_remote(self, getAllFollowers_mock: Mock):
         # it should return response from GetAllFollowers()
         getAllFollowers_mock.return_value = self.mock_remote_follower_response
-        response = self.client.get(f'/service/authors/{self.author1.id}/followers?origin={self.server.server_address}')
+        response = self.client.get(f'/service/authors/{self.author1_id}/followers?origin={self.server.server_address}')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         response_data = response.json()
         self.assertEqual(response_data, self.mock_remote_follower_response)
@@ -92,17 +95,17 @@ class FollowersTestCase(APITestCase):
     def test_has_friends(self, getAuthor_mock: Mock):
         # it should return a list of friends if there's bidirectional following
         getAuthor_mock.return_value = self.mock_remote_author
-        self.addFollower(self.author1, self.author2)
-        self.addFollower(self.author2, self.author1)
+        self.addFollower(self.author1_serializer, self.author2_serializer)
+        self.addFollower(self.author2_serializer, self.author1_serializer)
 
-        response = self.client.get(f'/service/authors/{self.author1.id}/friends')
+        response = self.client.get(f'/service/authors/{self.author1_id}/friends')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         response_data = response.json()
         self.assertEqual(len(response_data["items"]), 1)
 
     def test_no_friends(self):
         # it should return an empty list if there's no bidirectional following
-        response = self.client.get(f'/service/authors/{self.author1.id}/friends')
+        response = self.client.get(f'/service/authors/{self.author1_id}/friends')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.content, b'{"type":"friends","items":[]}')
 
@@ -114,56 +117,77 @@ class FollowersTestCase(APITestCase):
     # endof GetFriendsApiView region
 
     # EditFollowersApiView region
-    # def test_put_and_delete_followers(self):
-    #     # testing adding a follower
-    #     response = self.client.put(f'/service/authors/{self.id}/followers/{self.foreign_id1}')
-    #     self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-    #     self.assertEqual(response.content, b'"Added"')
+    def test_delete_followers_local(self):
+        # it should delete local follower
+        self.addFollower(self.author2_serializer, self.author1_serializer)
 
-    #     # check that it was added to the database
-    #     response = self.client.get(f'/service/authors/{self.id}/followers')
-    #     self.assertEqual(response.status_code, status.HTTP_200_OK)
-        
-    #     self.assertNotEqual(response.content, b'{"type":"followers","items":[]}')
+        following = { "object": self.author1_serializer["id"]}
 
-    #     # test delete
-    #     response = self.client.delete(f'/service/authors/{self.id}/followers/{self.foreign_id1}')
-    #     self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
-    #     self.assertEqual(response.content, b'"Deleted"')
+        response = self.client.delete(f'/service/authors/{self.author2_id}/followers/{self.author1_id}?origin=local',
+            following,
+            format='json'
+        )
+        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+        self.assertEqual(response.content, b'"Deleted"')
 
-    #     # check that it was removed from the database
-    #     response = self.client.get(f'/service/authors/{self.id}/followers')
-    #     self.assertEqual(response.status_code, status.HTTP_200_OK)
-    #     self.assertEqual(response.content, b'{"type":"followers","items":[]}')
-    # # endof EditFollowersApiView region
+        # check that it was deleted from database
+        result = self.checkFollower(self.author2_serializer, self.author1_serializer)
+        self.assertEqual(len(result), 0)
 
-    # def test_get_is_follower(self):
-    #     # check when is a follower
-    #     self.client.put(f'/service/authors/{self.id}/followers/{self.foreign_id2}')
-    #     response = self.client.get(f'/service/authors/{self.id}/followers/{self.foreign_id2}')
-    #     self.assertEqual(response.status_code, status.HTTP_200_OK)
-    #     self.assertIn(b'"type":"author"', response.content)
+    @patch('following.views.delete_follower')
+    def test_delete_followers_remote(self, delete_follower_mock: Mock):
+        # it should delete local follower
+        delete_follower_mock.return_value = "Deleted"
+        self.addFollower(self.author2_serializer, self.author1_serializer)
 
-    # def test_get_not_follower(self):
-    #     # check when not a follower
-    #     response = self.client.get(f'/service/authors/{self.id}/followers/{self.foreign_id1}')
-    #     self.assertEqual(response.status_code, status.HTTP_200_OK)
-    #     self.assertEqual(response.content, b'[]')
+        response = self.client.delete(f'/service/authors/{self.author1_id}/followers/{self.author2_id}?origin={self.server.server_address}')
+        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+        self.assertEqual(response.content, b'"Deleted"')
 
-    # def test_invalid_delete(self):
-    #     # test when trying to delete follower that is not in database
-    #     invalid_id = "123"
-    #     response = self.client.delete(f'/service/authors/{self.id}/followers/{invalid_id}')
-    #     self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+    def test_invalid_delete(self):
+        # it should fail if invalid id is sent
+        invalid_id = "123"
+        response = self.client.delete(f'/service/authors/{self.id}/followers/{invalid_id}?origin=local')
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
-    # def test_invalid_put(self):
-    #     # test when trying to delete follower that is not in database
-    #     invalid_id = "123"
-    #     response = self.client.put(f'/service/authors/{self.id}/followers/{invalid_id}')
-    #     self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+    def test_put_follower(self):
+        # it should add a new follower
+        follower = {"actor": self.author2_serializer}
+        response = self.client.put(f'/service/authors/{self.author1_id}/followers/{self.author2_id}',
+            follower,
+            format='json'
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)    
 
-    # def test_invalid_get(self):
-    #     # test when uses an id that is not valid
-    #     invalid_id = "123"
-    #     response = self.client.delete(f'/service/authors/{self.id}/followers/{invalid_id}')
-    #     self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        # check if db was updated
+        result = self.checkFollower(self.author2_serializer, self.author1_serializer)
+        self.assertEqual(len(result), 1)
+
+    def test_invalid_put(self):
+        # it should return 400 error if author id is invalid
+        invalid_id = "123"
+        response = self.client.put(f'/service/authors/{self.author1_id}/followers/{invalid_id}')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)    
+
+    def test_check_follower_local_false(self):
+        # it should return false if author2 is not following author1
+        response = self.client.get(f'/service/authors/{self.author1_id}/followers/{self.author2_id}?origin=local&actor_id={self.author2_serializer["id"]}&object_id={self.author1_serializer["id"]}')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.content, b'false')
+
+    def test_check_follower_local_true(self):
+        # it should return true if author2 is following author1
+        self.addFollower(self.author2_serializer, self.author1_serializer)
+
+        response = self.client.get(f'/service/authors/{self.author1_id}/followers/{self.author2_id}?origin=local&actor_id={self.author2_serializer["id"]}&object_id={self.author1_serializer["id"]}')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.content, b'true')
+
+    @patch('following.views.CheckFollower')
+    def test_check_follower_remote(self, checkFollower_mock: Mock):
+        # it should return false if author2 is not following author1
+        checkFollower_mock.return_value = True
+        response = self.client.get(f'/service/authors/{self.author1_id}/followers/{self.author2_id}?origin={self.server.server_address}')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.content, b'true')
+    # endof EditFollowersApiView region
