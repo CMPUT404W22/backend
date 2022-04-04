@@ -47,7 +47,7 @@ class GetFollowersApiView(GenericAPIView):
             return response.Response(followers, status=status.HTTP_200_OK)
 
         except Exception as e:
-            return response.Response(status=status.HTTP_400_BAD_REQUEST)
+            return response.Response(f"Failed to get followers: {e}", status=status.HTTP_400_BAD_REQUEST)
 
 
 class EditFollowersApiView(GenericAPIView):
