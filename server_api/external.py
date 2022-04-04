@@ -17,6 +17,9 @@ def GetAllAuthors():
 
     return result
 
+def GetAuthor(server, author_id):
+    author = requests.get(f"{server.server_address}authors/{author_id}", auth=HTTPBasicAuth(server.auth.split(":")[0], server.auth.split(":")[1]))
+    return author.json()
 
 def GetAllPosts():
     servers = Server.objects.all()
