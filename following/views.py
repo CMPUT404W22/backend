@@ -65,7 +65,7 @@ class GetFriendsApiView(GenericAPIView):
             return response.Response(result, status.HTTP_200_OK)
 
         except Exception as e:
-            return response.Response(status=status.HTTP_400_BAD_REQUEST)
+            return response.Response(f"Failed to get friends: {e}", status=status.HTTP_400_BAD_REQUEST)
 
 
 class EditFollowersApiView(GenericAPIView):
