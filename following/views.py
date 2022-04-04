@@ -6,7 +6,6 @@ from author.serializer import AuthorSerializer
 from following.models import Following
 from server_api.models import Server
 from server_api.external import GetAllFollowers, CheckFollower, delete_follower, GetAuthor
-import json
 
 class GetFollowersApiView(GenericAPIView):
     authentication_classes = [BasicAuthentication, ]
@@ -93,11 +92,8 @@ class EditFollowersApiView(GenericAPIView):
         try:
             address = request.GET.get("origin")
             if address == "local":
-                author = Author.objects.get(id=user_id)
-                author_serializer = self.serializer_class(author, many=False).data                
-                follower_id = author_serializer["id"]
-                following_id = request.data["object"]
-
+                follower_id = request.GET.get("follower")
+                following_id = request.GET.get("following")
                 Following.objects.filter(author=follower_id, following=following_id).delete()
                 return response.Response("Deleted", status.HTTP_202_ACCEPTED)
             server = Server.objects.get(server_address__icontains=f"{address}")

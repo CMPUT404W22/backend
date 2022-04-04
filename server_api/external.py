@@ -88,7 +88,7 @@ def CheckFollower(server, author, follower):
         follower = requests.get(f"{server.server_address}authors/{author}/followers/{follower}", auth=HTTPBasicAuth(server.auth.split(":")[0], server.auth.split(":")[1]))
         follower_json = follower.json()["detail"]
     elif server.server_address == "https://c404-social-distribution.herokuapp.com/service/":
-        follower = requests.get(f"{server.server_address}authors/{author}/followers/{follower}", auth=HTTPBasicAuth(server.auth.split(":")[0], server.auth.split(":")[1]))
+        follower = requests.get(f"{server.server_address}authors/{follower}/followers/{author}", auth=HTTPBasicAuth(server.auth.split(":")[0], server.auth.split(":")[1]))
         follower_json = follower.json()
     
     return follower_json
