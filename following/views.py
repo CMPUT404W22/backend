@@ -6,7 +6,6 @@ from author.serializer import AuthorSerializer
 from following.models import Following
 from server_api.models import Server
 from server_api.external import GetAllFollowers, CheckFollower, delete_follower, GetAuthor
-import json
 
 class GetFollowersApiView(GenericAPIView):
     authentication_classes = [BasicAuthentication, ]
