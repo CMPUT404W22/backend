@@ -121,12 +121,7 @@ class FollowersTestCase(APITestCase):
         # it should delete local follower
         self.addFollower(self.author2_serializer, self.author1_serializer)
 
-        following = { "object": self.author1_serializer["id"]}
-
-        response = self.client.delete(f'/service/authors/{self.author2_id}/followers/{self.author1_id}?origin=local',
-            following,
-            format='json'
-        )
+        response = self.client.delete(f'/service/authors/{self.author2_id}/followers/{self.author1_id}?origin=local&follower={self.author2_serializer["id"]}&following={self.author1_serializer["id"]}')
         self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
         self.assertEqual(response.content, b'"Deleted"')
 
@@ -143,12 +138,6 @@ class FollowersTestCase(APITestCase):
         response = self.client.delete(f'/service/authors/{self.author1_id}/followers/{self.author2_id}?origin={self.server.server_address}')
         self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
         self.assertEqual(response.content, b'"Deleted"')
-
-    def test_invalid_delete(self):
-        # it should fail if invalid id is sent
-        invalid_id = "123"
-        response = self.client.delete(f'/service/authors/{self.id}/followers/{invalid_id}?origin=local')
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_put_follower(self):
         # it should add a new follower
