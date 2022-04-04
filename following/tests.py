@@ -1,5 +1,4 @@
 from author.models import Author
-from following.models import FollowRequest
 from rest_framework.test import APITestCase, APIClient
 from rest_framework import status
 

@@ -1,6 +1,5 @@
 from django.contrib import admin
 
-from following.models import Following, FollowRequest
+from following.models import Following
 
 admin.site.register(Following)
-admin.site.register(FollowRequest)

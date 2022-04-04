@@ -1,5 +1,4 @@
 from django.db import models
-import uuid
 from author.models import Author
 
 
