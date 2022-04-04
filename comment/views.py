@@ -1,3 +1,5 @@
+import json
+
 from django.db.models import Q
 from django.shortcuts import render
 
@@ -9,6 +11,7 @@ from rest_framework.generics import GenericAPIView
 
 from author.models import Author
 from comment.serializer import CommentSerializer
+from notification.models import Notification
 from post.models import Post
 from comment.models import Comment
 from author.host import base_url
@@ -75,6 +78,8 @@ class GetCommentsApiView(GenericAPIView):
             comment.type = "text/plain"
             comment.save()
 
+            n = Notification.objects.create(author=post.author, content=json.dumps(CommentSerializer(comment, many=False).data))
+
             result = self.serializer_class(comment, many=False)
             return response.Response(result.data, status=status.HTTP_201_CREATED)
         except Exception as e:
@@ -93,7 +98,6 @@ class CommentApiView(GenericAPIView):
                 return response.Response(status=status.HTTP_403_FORBIDDEN)
         except Exception as e:
             return response.Response(f"Error: {e}", status=status.HTTP_400_BAD_REQUEST)
-
 
     def delete(self, request, user_id, post_id, comment_id):
         try:

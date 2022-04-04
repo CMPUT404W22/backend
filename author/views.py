@@ -15,9 +15,10 @@ class Register(GenericAPIView):
         username = request.data["username"]
         password = request.data["password"]
         display_name = request.data["display_name"]
+        link = request.data["profileImageLink"]
         github = request.data["github"]
 
-        new_user = Author.objects.create_user(username, password, display_name=display_name, github=github)
+        new_user = Author.objects.create_user(username, password, display_name=display_name, github=github, image=link)
         new_user.is_active = False
         new_user.save()
 

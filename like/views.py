@@ -13,19 +13,19 @@ from server_api.models import Server
 from author.serializer import AuthorSerializer
 
 
-def save_like_post(author, post):
+def save_like_post(author, post, name):
     like_post = LikePost.objects.create(author=author,post=post)
     like_post.author = author
     like_post.post = post
-    like_post.summary = author.username + " likes your post"
+    like_post.summary = name + " likes your post"
     like_post.save()
 
 
-def save_like_comment(author, comment):
+def save_like_comment(author, comment, name):
     like_comment = LikeComment.objects.create(author=author,comment=comment)
     like_comment.author = author
     like_comment.comment = comment
-    like_comment.summary = author.username + " liked on your comment"
+    like_comment.summary = name + " liked on your comment"
     like_comment.save()
 
 

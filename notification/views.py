@@ -3,6 +3,7 @@ from rest_framework.authentication import BasicAuthentication
 from rest_framework.generics import GenericAPIView
 from rest_framework import response, status
 from author.models import Author
+from author.serializer import AuthorSerializer
 from notification.models import Notification
 from post.models import Post
 from comment.models import Comment
@@ -25,10 +26,10 @@ def parse_contents(author, data_json):
 
     if 'post' in summary.lower():
         post = Post.objects.get(id=object_url[last_index])
-        save_like_post(author, post)
+        save_like_post(AuthorSerializer(author, many=False).data["id"], post, author.display_name)
     elif 'comment' in summary.lower():
         comment = Comment.objects.get(id=object_url[last_index])
-        save_like_comment(author, comment)
+        save_like_comment(AuthorSerializer(author, many=False).data["id"], comment, author.display_name)
     else:
         raise Exception(f"Invalid summary {summary}")
 
@@ -63,7 +64,7 @@ class NotificationsApiView(GenericAPIView):
         if origin == "local":
             try:
                 content = json.dumps(request.data)
-                author = Author.objects.get(id=user_id)
+                author = Author.objects.get(id=request.user.id)
                 Notification.objects.create(author=author, content=content)
                 parse_contents(author, request.data)
                 return response.Response("Added notification", status=status.HTTP_201_CREATED)

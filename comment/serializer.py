@@ -18,7 +18,7 @@ class CommentSerializer(serializers.ModelSerializer):
         representation['author'] = AuthorSerializer(instance.get_author(), many=False).data
         representation['comment'] = instance.content
         representation['contentType'] = instance.type
-        representation['published'] = instance.created
+        representation['published'] = str(instance.created)
         representation['likeCount'] = LikeComment.objects.filter(comment=instance).count()
         representation['id'] = f"{base_url}/authors/{instance.get_author().id}/posts/{instance.post.id}/comments/{instance.id}"
 
