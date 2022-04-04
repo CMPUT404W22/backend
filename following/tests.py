@@ -4,6 +4,7 @@ from following.models import Following
 from rest_framework.test import APITestCase, APIClient
 from rest_framework import status
 from server_api.models import Server
+from unittest.mock import Mock, patch
 
 class FollowersTestCase(APITestCase):
     # helper functions
@@ -27,10 +28,10 @@ class FollowersTestCase(APITestCase):
                                    display_name="user2", github="2")
 
         # get the ids of the users
-        self.author1 = Author.objects.get(username="user1")
+        self.author1: Author = Author.objects.get(username="user1")
         self.foreign_id1 = self.author1.id
 
-        self.author2 = Author.objects.get(username="user2")
+        self.author2: Author = Author.objects.get(username="user2")
         self.foreign_id2 = self.author2.id
 
         self.user = Author.objects.get(username="test1")
@@ -40,16 +41,18 @@ class FollowersTestCase(APITestCase):
         self.client = APIClient()
         self.client.login(username='test1', password='password')
 
-    # GetFriendsApiView region
+        self.mock_remote_follower_response = {"type": "followers"}
+
+    # GetFollowersApiView region
     def test_get_followers_local_empty(self):
-        # testing get before adding any followers
+        # it should return an empty list if there are no followers
         response = self.client.get(f'/service/authors/{self.id}/followers?origin=local')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.content, b'{"type":"followers","items":[]}')
 
 
     def test_get_followers_local(self):
-        # testing get before adding any followers
+        # it should have a list of followers in response["items"] if we add a follower
         self.addFollower(self.author2, self.author1)
 
         response = self.client.get(f'/service/authors/{self.author1.id}/followers?origin=local')
@@ -58,9 +61,44 @@ class FollowersTestCase(APITestCase):
         response_data = response.json()
         self.assertEqual(len(response_data["items"]), 1)
 
-    def test_get_followers_remote(self):
+    # mock out call to GetAllFollowers()
+    @patch('following.views.GetAllFollowers')
+    def test_get_followers_remote(self, getAllFollowers_mock: Mock):
+        # it should return response from GetAllFollowers()
+        getAllFollowers_mock.return_value = self.mock_remote_follower_response
         response = self.client.get(f'/service/authors/{self.author1.id}/followers?origin={self.server.server_address}')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        response_data = response.json()
+        self.assertEqual(response_data, self.mock_remote_follower_response)
 
+    def test_get_followers_fail(self):
+        # it should fail if we send a bad request
+        invalidId = "123"
+        response = self.client.get(f'/service/authors/{invalidId}/followers?origin={self.server.server_address}')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+    # endof GetFollowersApiView region
+
+    # GetFriendsApiView region
+    def test_has_friends(self):
+        # it should return a list of friends if there's bidirectional following
+        self.addFollower(self.author1, self.author2)
+        self.addFollower(self.author2, self.author1)
+        response = self.client.get(f'/service/authors/{self.author1.id}/friends')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        response_data = response.json()
+        self.assertEqual(len(response_data["items"]), 1)
+
+    def test_no_friends(self):
+        # it should return an empty list if there's no bidirectional following
+        response = self.client.get(f'/service/authors/{self.author1.id}/friends')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.content, b'{"type":"friends","items":[]}')
+
+    def test_get_friend_fail(self):
+        # it should fail if we send a bad request
+        invalidId = "123"
+        response = self.client.get(f'/service/authors/{invalidId}/friends')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
     # endof GetFriendsApiView region
 
     # EditFollowersApiView region
