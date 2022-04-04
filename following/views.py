@@ -56,16 +56,32 @@ class GetFriendsApiView(GenericAPIView):
         # gets a list of authors who are user_id's followers
         try:
             author = Author.objects.get(id=user_id)
-            followers = [x.author for x in Following.objects.filter(following=author)]
+            author_serializer = AuthorSerializer(author, many=False).data
+            followers = [x.author for x in Following.objects.filter(following=author_serializer["id"])]
+
+            items = []
+            for f in followers:
+                exists = Following.objects.filter(author=author_serializer["id"], following=f)
+                if(len(exists) > 0):
+                    id = f.split('/')[-1]
+                    try:
+                        follower = Author.objects.get(id=id)
+                        i = AuthorSerializer(follower, many=False).data
+                        items.append(i)
+                    except Exception:
+                        address = f.author.split('/')[2]
+                        server = Server.objects.get(server_address__icontains=f"{address}")
+                        i = GetAuthor(server, id)
+                        items.append(i)
 
             result = {
                 "type": "friends",
-                "items": AuthorSerializer(followers, many=True).data
+                "items": [i for i in items]
             }
             return response.Response(result, status.HTTP_200_OK)
 
         except Exception as e:
-            return response.Response(status=status.HTTP_400_BAD_REQUEST)
+            return response.Response(f"Failed to get friends: {e}", status=status.HTTP_400_BAD_REQUEST)
 
 
 class EditFollowersApiView(GenericAPIView):
