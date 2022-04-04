@@ -20,13 +20,11 @@ class GetFollowersApiView(GenericAPIView):
                 author = Author.objects.get(id=user_id)
                 author_serializer = self.serializer_class(author, many=False).data
                 followers = Following.objects.filter(following=author_serializer['id'])
-
                 items = []
-
                 for f in followers:
                     id = f.author.split('/')[-1]
                     try:
-                        follower = Author.objects.get(id)
+                        follower = Author.objects.get(id=id)
                         i = AuthorSerializer(follower, many=False).data
                         items.append(i)
                     except Exception:
@@ -52,14 +50,19 @@ class GetFollowersApiView(GenericAPIView):
 
 class EditFollowersApiView(GenericAPIView):
     authentication_classes = [BasicAuthentication, ]
+    serializer_class = AuthorSerializer
 
     def delete(self, request, user_id, foreign_user_id):
         # remove FOREIGN_AUTHOR_ID as a follower of AUTHORs_ID
         try:
             address = request.GET.get("origin")
             if address == "local":
-                follower_id = request.data["actor"]["id"]
-                following_id = request.data["object"]["id"]
+                author = Author.objects.get(id=user_id)
+                author_serializer = self.serializer_class(author, many=False).data
+                
+                follower_id = author_serializer["id"]
+                following_id = request.data["object"]
+                print(following_id)
                 Following.objects.filter(author=follower_id, following=following_id).delete()
                 return response.Response("Deleted", status.HTTP_202_ACCEPTED)
             server = Server.objects.get(server_address__icontains=f"{address}")
@@ -72,7 +75,9 @@ class EditFollowersApiView(GenericAPIView):
         # Add a follower using request data
         try:
             follower = request.data["actor"]["id"]
-            following = request.data["object"]["id"]
+            author = Author.objects.get(id=user_id)
+            author_serializer = self.serializer_class(author, many=False).data
+            following = author_serializer["id"]
             Following.objects.create(author=follower, following=following)
             return response.Response("Added", status.HTTP_201_CREATED)
         except Exception as e:
