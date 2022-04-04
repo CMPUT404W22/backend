@@ -15,7 +15,7 @@ class FollowersTestCase(APITestCase):
 
     def setUp(self):
         # create server
-        self.server: Server = Server.objects.create(server_address="remote_address", auth="username:password")
+        self.server: Server = Server.objects.create(server_address="https://cmput404-w22-project-backend.herokuapp.com/", auth="username:password")
 
         # create users
         Author.objects.create_user(username="test1", password="password",
@@ -42,6 +42,15 @@ class FollowersTestCase(APITestCase):
         self.client.login(username='test1', password='password')
 
         self.mock_remote_follower_response = {"type": "followers"}
+        self.mock_remote_author = {
+            "type":"author",
+            "id":"http://127.0.0.1:5454/authors/1d698d25ff008f7538453c120f581471",
+            "url":"http://127.0.0.1:5454/authors/1d698d25ff008f7538453c120f581471",
+            "host":"http://127.0.0.1:5454/",
+            "displayName":"Greg Johnson",
+            "github": "http://github.com/gjohnson",
+            "profileImage": "https://i.imgur.com/k7XVwpB.jpeg"
+        }
 
     # GetFollowersApiView region
     def test_get_followers_local_empty(self):
@@ -79,10 +88,13 @@ class FollowersTestCase(APITestCase):
     # endof GetFollowersApiView region
 
     # GetFriendsApiView region
-    def test_has_friends(self):
+    @patch('following.views.GetAuthor')
+    def test_has_friends(self, getAuthor_mock: Mock):
         # it should return a list of friends if there's bidirectional following
+        getAuthor_mock.return_value = self.mock_remote_author
         self.addFollower(self.author1, self.author2)
         self.addFollower(self.author2, self.author1)
+
         response = self.client.get(f'/service/authors/{self.author1.id}/friends')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         response_data = response.json()
@@ -102,7 +114,6 @@ class FollowersTestCase(APITestCase):
     # endof GetFriendsApiView region
 
     # EditFollowersApiView region
-    # endof EditFollowersApiView region
     def test_put_and_delete_followers(self):
         # testing adding a follower
         response = self.client.put(f'/service/authors/{self.id}/followers/{self.foreign_id1}')
@@ -124,6 +135,7 @@ class FollowersTestCase(APITestCase):
         response = self.client.get(f'/service/authors/{self.id}/followers')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.content, b'{"type":"followers","items":[]}')
+    # endof EditFollowersApiView region
 
     def test_get_is_follower(self):
         # check when is a follower
