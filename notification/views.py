@@ -64,7 +64,7 @@ class NotificationsApiView(GenericAPIView):
         if origin == "local":
             try:
                 content = json.dumps(request.data)
-                author = Author.objects.get(id=request.user.id)
+                author = Author.objects.get(id=user_id)
                 Notification.objects.create(author=author, content=content)
                 parse_contents(author, request.data)
                 return response.Response("Added notification", status=status.HTTP_201_CREATED)
