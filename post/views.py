@@ -29,9 +29,7 @@ class GetHomePagePosts(GenericAPIView):
 
                 for i in following:
                     following_id = i.following.split('/')[-1]
-                    following_obj = Author.objects.get(id=following_id)
-                    following_ser = AuthorSerializer(following_obj, many=False).data
-                    p = Post.objects.filter(Q(author=following_ser) & Q(unlisted=False) & (Q(visibility=Visibility.PUBLIC) | Q(visibility=Visibility.FRIENDS)))
+                    p = Post.objects.filter(Q(author=following_id) & Q(unlisted=False) & (Q(visibility=Visibility.PUBLIC) | Q(visibility=Visibility.FRIENDS)))
                     posts = posts | p
             elif request_type == "self":
                 posts = Post.objects.filter(author=request.user)
