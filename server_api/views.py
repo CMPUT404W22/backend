@@ -17,6 +17,7 @@ from like.views import save_like_post, save_like_comment
 
 import json
 
+
 # region authors
 class GetAuthorsApiView(GenericAPIView):
     authentication_classes = [BasicAuthentication, ]
@@ -217,12 +218,13 @@ def parse_contents(author, data_json):
 
     if 'post' in summary.lower():
         post = Post.objects.get(id=object_url[last_index])
-        save_like_post(author, post)
+        save_like_post(AuthorSerializer(author, many=False).data["id"], post, author.display_name)
     elif 'comment' in summary.lower():
         comment = Comment.objects.get(id=object_url[last_index])
-        save_like_comment(author, comment)
+        save_like_comment(AuthorSerializer(author, many=False).data["id"], comment, author.display_name)
     else:
         raise Exception(f"Invalid summary {summary}")
+
 
 class SendToInboxApiView(GenericAPIView):
     authentication_classes = [BasicAuthentication, ]
