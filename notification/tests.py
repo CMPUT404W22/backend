@@ -44,7 +44,7 @@ class NotificationTestCase(APITestCase):
 
     def test_post(self):
         # it should add notification and return 201 CREATED response
-        response = self.client.post(f'/service/authors/{self.author_id}/inbox', self.request)
+        response = self.client.post(f'/service/authors/{self.author_id}/inbox?origin=local', self.request)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.content, b'"Added notification"')
         notifications = Notification.objects.filter(author=self.author)
@@ -53,7 +53,7 @@ class NotificationTestCase(APITestCase):
     def test_fail_post(self):
         # it should return  400 BAD REQUEST response if given invalid author id
         invalid_id = '123'
-        response = self.client.post(f'/service/authors/{invalid_id}/inbox', self.request)
+        response = self.client.post(f'/service/authors/{invalid_id}/inbox?origin=local', self.request)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_delete(self):
